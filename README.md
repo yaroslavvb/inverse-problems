@@ -16,9 +16,9 @@ uv run linattention_visualize.py
 3. student is initialized with identity matrices
 4. Initialize LR using line search, apply adaptive LR tuning at each step
 
-report -- report here
 
-Observations ([from report](https://yaroslavvb.github.io/inverse-problems/reports/linattention_report.html)):
+## Observations
+[from report](https://yaroslavvb.github.io/inverse-problems/reports/linattention_report.html))
 
 - Alternative allows using much larger learning rate and converges faster
 
