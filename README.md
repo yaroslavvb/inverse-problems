@@ -24,7 +24,8 @@ uv run linattention_visualize.py
 
 <img src="images/image3.png" width="20%">
 
-- altprop changes last layer much more than it changes the first layer while regular backprop does the opposite -- the first layer is changed much more than the last layer.
+- altprop trains last layer much more than the first layer
+- regular backprop trains first layer more than last layer
 
 <img src="images/image1.png" width="20%"> <img src="images/image2.png" width="20%">
 
