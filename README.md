@@ -1,9 +1,14 @@
-# Backprop vs altprop on an easy inverse problem.
+
+# Experiment: backprop vs alternative on an easy inverse problem.
+
+<img width="168" height="93" alt="Screenshot 2026-06-03 at 4 27 15 PM" src="https://github.com/user-attachments/assets/cc4ed827-7724-4a12-85d6-b7960a6e1ee1" />
 
 ```
 uv run linattention_solve.py
 uv run linattention_visualize.py
 ```
+
+
 
 Altprop: use linear approximation to take into account the update to layer n+1 when computing update to layer n  ([colab](https://colab.research.google.com/drive/1t3YD6hQsBcTwnaVPKxgVoMRo-idLjze3#scrollTo=rg9J-sPFR3Gd)).
 
