@@ -29,4 +29,4 @@ uv run linattention_visualize.py
 
 <img src="images/image1.png" width="20%"> <img src="images/image2.png" width="20%">
 
-Initial prototyping in ([colab](https://colab.research.google.com/drive/1t3YD6hQsBcTwnaVPKxgVoMRo-idLjze3#scrollTo=rg9J-sPFR3Gd)).
+*Initial prototyping in ([colab](https://colab.research.google.com/drive/1t3YD6hQsBcTwnaVPKxgVoMRo-idLjze3#scrollTo=rg9J-sPFR3Gd)).*
