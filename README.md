@@ -18,7 +18,7 @@ uv run linattention_visualize.py
 
 
 ## Observations
-[from report](https://yaroslavvb.github.io/inverse-problems/reports/linattention_report.html))
+[from report](https://yaroslavvb.github.io/inverse-problems/reports/linattention_report.html)
 
 - Alternative allows using much larger learning rate and converges faster
 
