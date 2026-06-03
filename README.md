@@ -18,7 +18,7 @@ uv run linattention_visualize.py
 
 report -- report here
 
-Observations:
+Observations ([from report](https://yaroslavvb.github.io/inverse-problems/reports/linattention_report.html)):
 
 - Alternative allows using much larger learning rate and converges faster
 
@@ -26,8 +26,6 @@ Observations:
 
 - altprop changes last layer much more than it changes the first layer while regular backprop does the opposite -- the first layer is changed much more than the last layer.
 
-<img src="images/image1.png" width="20%">
-
-<img src="images/image2.png" width="20%">
+<img src="images/image1.png" width="20%"> <img src="images/image2.png" width="20%">
 
 ([colab](https://colab.research.google.com/drive/1t3YD6hQsBcTwnaVPKxgVoMRo-idLjze3#scrollTo=rg9J-sPFR3Gd)).
