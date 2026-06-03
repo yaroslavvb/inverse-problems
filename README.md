@@ -1,7 +1,7 @@
 
 # Experiment 03jun26: backprop alternative on an easy inverse problem
 
-<img wwidth="10%" alt="Screenshot 2026-06-03 at 4 27 15 PM" src="https://github.com/user-attachments/assets/cc4ed827-7724-4a12-85d6-b7960a6e1ee1" />
+<img width="20%" alt="Screenshot 2026-06-03 at 4 27 15 PM" src="https://github.com/user-attachments/assets/cc4ed827-7724-4a12-85d6-b7960a6e1ee1" />
 
 ```
 uv run linattention_solve.py
