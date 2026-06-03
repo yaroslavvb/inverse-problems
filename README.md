@@ -24,7 +24,7 @@ uv run linattention_visualize.py
 
 <img src="images/image3.png" width="20%">
 
-- altprop trains last layer much more than the first layer
+- Alternative trains last layer much more than the first layer
 - regular backprop trains first layer more than last layer
 
 <img src="images/image1.png" width="20%"> <img src="images/image2.png" width="20%">
