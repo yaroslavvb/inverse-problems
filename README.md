@@ -1,5 +1,5 @@
 
-# Experiment: backprop alternative on an easy inverse problem.
+# Experiment 03jun26: backprop alternative on an easy inverse problem
 
 <img width="168" height="93" alt="Screenshot 2026-06-03 at 4 27 15 PM" src="https://github.com/user-attachments/assets/cc4ed827-7724-4a12-85d6-b7960a6e1ee1" />
 
