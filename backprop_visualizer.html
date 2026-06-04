@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backprop Visualizer</title>
+    <meta name="description" content="An interactive visualizer comparing backpropagation and target propagation on 3-layer neural network inversion.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-main: #f3f4f6;
+            --bg-card: rgba(255, 255, 255, 0.85);
+            --border-card: rgba(0, 0, 0, 0.08);
+            --text-main: #1f2937;
+            --text-muted: #4b5563;
+            --primary: #4f46e5;
+            --primary-hover: #3730a3;
+        }
+
+        body {
+            background-color: var(--bg-main); color: var(--text-main); font-family: 'Inter', -apple-system, sans-serif;
+            margin: 0; padding: 12px; min-height: 100vh; box-sizing: border-box;
+            background-image: radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.04) 0%, transparent 40%),
+                              radial-gradient(circle at 90% 80%, rgba(249, 115, 22, 0.03) 0%, transparent 40%);
+        }
+
+        h1 { margin: 0; font-weight: 700; }
+
+        .header { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .header-title h1 {
+            font-size: 18px; letter-spacing: -0.025em;
+            background: linear-gradient(to right, #111827, #4b5563);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+
+        .dashboard-grid { display: grid; grid-template-columns: 54px 480px; gap: 12px; max-width: 546px; margin: 0; }
+
+        .card { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 10px; padding: 10px 12px; backdrop-filter: blur(12px); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); }
+
+        .lr-slider-container {
+            grid-column: 1; grid-row: 2; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 12px 4px; height: 100%; box-sizing: border-box;
+        }
+        .lr-slider-container .title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 2px; }
+        .lr-slider-container .value { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: var(--text-main); margin-top: 2px; }
+
+        #scrub-slider { -webkit-appearance: none; width: 100%; background: #e5e7eb; height: 6px; border-radius: 3px; outline: none; flex: 1; margin: 0; }
+        #scrub-slider::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%;
+            background: var(--primary); cursor: pointer; transition: all 0.15s ease; box-shadow: 0 0 8px rgba(99, 102, 241, 0.5);
+        }
+        #scrub-slider::-webkit-slider-thumb:hover { background: #818cf8; transform: scale(1.1); }
+
+        .vertical-slider { -webkit-appearance: slider-vertical; writing-mode: vertical-lr; direction: rtl; width: 16px; height: 140px; padding: 0; margin: 8px auto; cursor: pointer; }
+
+        .workspace { grid-column: 1 / span 2; grid-row: 1; display: flex; flex-direction: column; gap: 12px; }
+
+        .vis-container {
+            display: flex; flex-direction: column; gap: 6px;
+            background: rgba(255, 255, 255, 0.01); border: 1px solid rgba(255, 255, 255, 0.04); border-radius: 10px; padding: 10px;
+        }
+
+        .panels-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; max-width: 100%; }
+
+        .panel-card {
+            background: #ffffff; border: 1px solid rgba(0, 0, 0, 0.06); border-radius: 8px; overflow: hidden;
+            display: flex; flex-direction: column; align-items: center; padding: 6px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .panel-card canvas { background: #ffffff; width: 100%; aspect-ratio: 1; }
+        .panel-label { font-size: 11px; font-weight: 600; margin-top: 4px; color: var(--text-muted); text-align: center; }
+
+        .rot-indicator {
+            font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600;
+            background: #ffffff; border: 1px solid rgba(0, 0, 0, 0.12); border-radius: 4px; padding: 2px 6px; margin-bottom: 4px; text-align: center; min-width: 50px; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .chart-box {
+            grid-column: 2; grid-row: 2; position: relative; background: #ffffff; border: 1px solid rgba(0, 0, 0, 0.06); border-radius: 10px; padding: 8px 12px;
+            display: flex; flex-direction: column; box-shadow: 0 4px 12px rgba(0,0,0,0.05); max-width: 480px; box-sizing: border-box;
+        }
+        .chart-box canvas { width: 100%; height: 185px; }
+
+        .scrub-container { display: flex; flex-direction: column; gap: 2px; margin-top: 6px; }
+        .scrub-info { display: flex; justify-content: space-between; align-items: center; font-size: 11px; font-weight: 600; color: var(--text-muted); margin-bottom: 2px; }
+        .scrub-controls { display: flex; align-items: center; gap: 8px; margin: 2px 0; }
+        .step-ticks { display: flex; justify-content: space-between; padding: 0 4px; font-size: 10px; font-family: 'JetBrains Mono', monospace; color: var(--text-muted); }
+
+        .hdr-btn { font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: 700; cursor: pointer; transition: all 0.15s ease; display: inline-block; margin: 0 2px; user-select: none; }
+        .hdr-btn.parallel { color: #1e40af; border: 1px solid rgba(30, 64, 175, 0.3); background: rgba(30, 64, 175, 0.05); }
+        .hdr-btn.parallel.active { color: white !important; background: #1e40af !important; border-color: #1e40af !important; box-shadow: 0 2px 4px rgba(30, 64, 175, 0.2); }
+        .hdr-btn.sequential { color: #b45309; border: 1px solid rgba(180, 83, 9, 0.3); background: rgba(180, 83, 9, 0.05); }
+        .hdr-btn.sequential.active { color: white !important; background: #b45309 !important; border-color: #b45309 !important; box-shadow: 0 2px 4px rgba(180, 83, 9, 0.2); }
+        .hdr-btn.backprop { color: #1e3a8a; border: 1px solid rgba(30, 58, 138, 0.3); background: rgba(30, 58, 138, 0.05); }
+        .hdr-btn.backprop.active { color: white !important; background: #1e3a8a !important; border-color: #1e3a8a !important; box-shadow: 0 2px 4px rgba(30, 58, 138, 0.2); }
+        .hdr-btn.target { color: #7c2d12; border: 1px solid rgba(124, 45, 18, 0.3); background: rgba(124, 45, 18, 0.05); }
+        .hdr-btn.target.active { color: white !important; background: #7c2d12 !important; border-color: #7c2d12 !important; box-shadow: 0 2px 4px rgba(124, 45, 18, 0.2); }
+        .hdr-btn:not(.active) { opacity: 0.6; }
+        .hdr-btn:hover:not(.active) { opacity: 0.95; background: rgba(0, 0, 0, 0.04); border-color: rgba(0, 0, 0, 0.25); }
+
+        .mini-btn {
+            background: rgba(0, 0, 0, 0.05); border: 1px solid rgba(0, 0, 0, 0.08); border-radius: 4px; color: var(--text-muted);
+            width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 10px; cursor: pointer; transition: all 0.15s ease; user-select: none;
+        }
+        .mini-btn:hover { background: rgba(0, 0, 0, 0.1); color: var(--text-main); }
+        .mini-btn.active { background: var(--primary); color: white; border-color: var(--primary-hover); box-shadow: 0 2px 6px rgba(99, 102, 241, 0.3); }
+
+        /* Explanation Highlights */
+        .desc-span {
+            transition: all 0.2s ease;
+            padding: 1px 4px;
+            border-radius: 4px;
+            font-weight: 500;
+            display: inline-block;
+            border: 1px solid transparent;
+            cursor: pointer;
+        }
+        
+        .desc-span.parallel.active {
+            background: rgba(30, 64, 175, 0.05);
+            color: #1e40af !important;
+            font-weight: 550;
+            border: 1px solid rgba(30, 64, 175, 0.2);
+        }
+        .desc-span.parallel:not(.active) {
+            opacity: 0.7;
+            background: transparent;
+        }
+
+        .desc-span.sequential.active {
+            background: rgba(180, 83, 9, 0.05);
+            color: #b45309 !important;
+            font-weight: 550;
+            border: 1px solid rgba(180, 83, 9, 0.2);
+        }
+        .desc-span.sequential:not(.active) {
+            opacity: 0.7;
+            background: transparent;
+        }
+
+        .desc-span.backprop.active {
+            background: rgba(30, 58, 138, 0.05);
+            color: #1e3a8a !important;
+            font-weight: 550;
+            border: 1px solid rgba(30, 58, 138, 0.2);
+        }
+        .desc-span.backprop:not(.active) {
+            opacity: 0.7;
+            background: transparent;
+        }
+
+        .desc-span.target.active {
+            background: rgba(124, 45, 18, 0.05);
+            color: #7c2d12 !important;
+            font-weight: 550;
+            border: 1px solid rgba(124, 45, 18, 0.2);
+        }
+        .desc-span.target:not(.active) {
+            opacity: 0.7;
+            background: transparent;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="header-title">
+            <h1>Backprop visualizer</h1>
+            <p style="margin: 20px 0 0 0; font-size: 13px; line-height: 1.8; color: var(--text-muted); user-select: none;">
+                <span id="hdr-parallel-btn" onclick="updateSched('parallel')" class="hdr-btn parallel active">parallel</span> vs 
+                <span id="hdr-sequential-btn" onclick="updateSched('sequential')" class="hdr-btn sequential">sequential</span>:<br>
+                <span style="display: block; margin-left: 20px; margin-bottom: 6px;">
+                    <span id="desc-parallel" onclick="updateSched('parallel')" class="desc-span parallel active" style="color: #1e40af;">compute layer updates Independently</span> vs 
+                    <span id="desc-sequential" onclick="updateSched('sequential')" class="desc-span sequential" style="color: #b45309;">incorporate updates of other layers during this step</span>
+                </span>
+                <span id="hdr-backprop-btn" onclick="updateRule('backprop')" class="hdr-btn backprop active">backprop</span> vs 
+                <span id="hdr-target-btn" onclick="updateRule('target')" class="hdr-btn target">target prop</span>:<br>
+                <span style="display: block; margin-left: 20px;">
+                    <span id="desc-backprop" onclick="updateRule('backprop')" class="desc-span backprop active" style="color: #1e3a8a;">gradient update</span> vs. 
+                    <span id="desc-target" onclick="updateRule('target')" class="desc-span target" style="color: #7c2d12;">solve for exact update locally</span>
+                </span>
+            </p>
+        </div>
+    </div>
+
+    <div class="dashboard-grid">
+        <div class="lr-slider-container card">
+            <div class="title">LR</div>
+            <input type="range" class="vertical-slider" min="0.0" max="1.0" step="0.05" value="1" oninput="updateLR(this.value)">
+            <div class="value" id="lr-val">1.00</div>
+        </div>
+
+        <div class="workspace">
+            <div class="vis-container">
+                <div class="panels-grid">
+                    <div class="panel-card">
+                        <div class="rot-indicator">0.0°</div>
+                        <canvas id="canvas-1"></canvas>
+                        <span class="panel-label">A1</span>
+                    </div>
+                    <div class="panel-card">
+                        <div class="rot-indicator" id="rot-val-2">0.0°</div>
+                        <canvas id="canvas-2"></canvas>
+                        <span class="panel-label">A2</span>
+                    </div>
+                    <div class="panel-card">
+                        <div class="rot-indicator" id="rot-val-3">0.0°</div>
+                        <canvas id="canvas-3"></canvas>
+                        <span class="panel-label">A3</span>
+                    </div>
+                    <div class="panel-card">
+                        <div class="rot-indicator" id="rot-val-4">0.0°</div>
+                        <canvas id="canvas-4"></canvas>
+                        <span class="panel-label">A4</span>
+                    </div>
+                </div>
+                <div class="panels-grid" style="margin-top: 6px;">
+                    <div class="panel-card" style="grid-column: 4;">
+                        <div class="rot-indicator">90.0°</div>
+                        <canvas id="canvas-5"></canvas>
+                        <span class="panel-label">Target Y</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="chart-box">
+            <canvas id="loss-chart"></canvas>
+            <div class="scrub-container">
+                <div class="scrub-info"><span id="scrub-label">Epoch Step: 0 / 15</span></div>
+                <div class="scrub-controls">
+                    <input type="range" id="scrub-slider" min="0" max="15" step="1" value="0" oninput="setPlayback(false); scrubStep(this.value)">
+                    <button class="mini-btn" id="scrub-play-btn" onclick="setPlayback(true)" title="Play">&#9658;</button>
+                    <button class="mini-btn" id="scrub-pause-btn" onclick="setPlayback(false)" title="Pause">&#9646;&#9646;</button>
+                </div>
+                <div class="step-ticks" id="scrub-ticks"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const TARGET_ANGLE = 90.0;
+        const INITIAL_ANGLES = [0.0, 0.0, 0.0];
+        const STEPS = 15;
+        const MAX_VAL = 10.5;
+
+        let state = { lr: 1.0, rule: 'backprop', sched: 'parallel', step: 0 };
+        let results = { points: createA(), targetPoints: [], histories: {} };
+        
+        const STRATEGIES = [
+            { label: 'BP / Parallel',   key: 'backprop_parallel',   color: '#1e3a8a', rule: 'backprop', sched: 'parallel' },
+            { label: 'BP / Sequential', key: 'backprop_sequential', color: '#0f766e', rule: 'backprop', sched: 'sequential', dash: [6, 4] },
+            { label: 'TP / Parallel',   key: 'target_parallel',     color: '#991b1b', rule: 'target',   sched: 'parallel' },
+            { label: 'TP / Sequential', key: 'target_sequential',   color: '#c2410c', rule: 'target',   sched: 'sequential', cross: true }
+        ];
+
+        let animInterval = null;
+
+        // Init Math Geometry
+        function createA() {
+            let A = [];
+            for (let i = 0; i < 30; i++) A.push([-i / 58.0, 1.0 - i / 29.0]);
+            for (let i = 0; i < 30; i++) A.push([i / 58.0, 1.0 - i / 29.0]);
+            for (let i = 0; i < 10; i++) A.push([-0.25 + i / 18.0, 0.5]);
+            
+            let meanX = A.reduce((s, p) => s + p[0], 0) / A.length;
+            let meanY = A.reduce((s, p) => s + p[1], 0) / A.length;
+            for (let p of A) { p[0] -= meanX; p[1] -= meanY; }
+            
+            let covXX = A.reduce((s, p) => s + p[0]*p[0], 0);
+            let covYY = A.reduce((s, p) => s + p[1]*p[1], 0);
+            let scaleX = Math.sqrt(covYY / covXX);
+            for (let p of A) p[0] *= scaleX;
+            
+            let sumX2 = A.reduce((s, p) => s + p[0]*p[0], 0);
+            let scaleF = Math.sqrt(0.5 * Math.pow(180.0 / Math.PI, 2) / sumX2);
+            for (let p of A) { p[0] *= scaleF; p[1] *= scaleF; }
+            return A;
+        }
+
+        function rotatePointCloud(pts, deg) {
+            let rad = deg * Math.PI / 180.0, cos = Math.cos(rad), sin = Math.sin(rad);
+            return pts.map(p => [p[0] * cos - p[1] * sin, p[0] * sin + p[1] * cos]);
+        }
+
+        function angleDeltaDeg(t, c) {
+            let d = ((t - c + 180) % 360 + 360) % 360 - 180;
+            return d === -180 ? 180 : d;
+        }
+
+        const hexToRgba = (hex, alpha) => {
+            const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        };
+
+        function forwardStates(pts, angles) {
+            let states = [pts], curr = pts;
+            for (let a of angles) { curr = rotatePointCloud(curr, a); states.push(curr); }
+            return states;
+        }
+
+        function updateDirection(pts, angles, rule) {
+            if (rule === "target") return angleDeltaDeg(TARGET_ANGLE, angles.reduce((a, b) => a + b, 0));
+            let out = forwardStates(pts, angles).pop();
+            let sum = out.reduce((s, p, i) => s + results.targetPoints[i][0] * p[1] - results.targetPoints[i][1] * p[0], 0);
+            return -sum * Math.PI / 180.0;
+        }
+
+        function applyStep(pts, angles, strategy) {
+            let next = [...angles];
+            if (strategy.sched === "parallel") {
+                let dir = state.lr * updateDirection(pts, next, strategy.rule);
+                return next.map(a => a + dir);
+            }
+            for (let i = next.length - 1; i >= 0; i--) next[i] += state.lr * updateDirection(pts, next, strategy.rule);
+            return next;
+        }
+
+        // App & Logic
+        function runSimulation() {
+            STRATEGIES.forEach(strategy => {
+                let angles = [...INITIAL_ANGLES], angleVals = [], missingVals = [], statesArr = [];
+                for (let step = 0; step <= STEPS; step++) {
+                    statesArr.push(forwardStates(results.points, angles));
+                    angleVals.push([...angles]);
+                    missingVals.push(Math.abs(angleDeltaDeg(TARGET_ANGLE, angles.reduce((a, b) => a + b, 0))));
+                    if (step < STEPS) angles = applyStep(results.points, angles, strategy);
+                }
+                results.histories[strategy.key] = { angles: angleVals, missingAngles: missingVals, intermediateStates: statesArr };
+            });
+            drawCurrentStep();
+            drawCharts();
+        }
+
+        function updateBoth(rule, sched) {
+            state.rule = rule;
+            state.sched = sched;
+            
+            ['backprop', 'target'].forEach(r => {
+                document.getElementById(`hdr-${r}-btn`).classList.toggle('active', rule === r);
+                document.getElementById(`desc-${r}`)?.classList.toggle('active', rule === r);
+            });
+            ['parallel', 'sequential'].forEach(s => {
+                document.getElementById(`hdr-${s}-btn`).classList.toggle('active', sched === s);
+                document.getElementById(`desc-${s}`)?.classList.toggle('active', sched === s);
+            });
+            runSimulation();
+        }
+
+        function updateRule(rule) { updateBoth(rule, state.sched); }
+        function updateSched(sched) { updateBoth(state.rule, sched); }
+
+        function updateLR(val) {
+            state.lr = parseFloat(val);
+            document.getElementById('lr-val').innerText = state.lr.toFixed(2);
+            runSimulation();
+        }
+
+        function scrubStep(step) {
+            state.step = parseInt(step);
+            document.getElementById('scrub-label').innerText = `Epoch Step: ${state.step} / ${STEPS}`;
+            drawCurrentStep();
+            drawCharts();
+        }
+
+        function setPlayback(play) {
+            document.getElementById('scrub-play-btn').classList.toggle('active', play);
+            document.getElementById('scrub-pause-btn').classList.toggle('active', !play);
+            clearInterval(animInterval);
+            
+            if (play) {
+                animInterval = setInterval(() => {
+                    let next = (state.step + 1) % (STEPS + 1);
+                    document.getElementById('scrub-slider').value = next;
+                    scrubStep(next);
+                }, 180);
+            }
+        }
+
+        // Canvas Rendering
+        function drawA(ctx, pts, color) {
+            let size = ctx.canvas.width / (window.devicePixelRatio || 1);
+            let mapX = x => size / 2 + (x / MAX_VAL) * (size / 2 * 0.9);
+            let mapY = y => size / 2 - (y / MAX_VAL) * (size / 2 * 0.9);
+            
+            ctx.strokeStyle = color; ctx.lineWidth = 2.0; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+            [[0, 29], [30, 59], [60, 69]].forEach(([s, e]) => {
+                ctx.beginPath(); ctx.moveTo(mapX(pts[s][0]), mapY(pts[s][1]));
+                for (let i = s + 1; i <= e; i++) ctx.lineTo(mapX(pts[i][0]), mapY(pts[i][1]));
+                ctx.stroke();
+            });
+            
+            ctx.fillStyle = color; let radius = 3.5; ctx.beginPath();
+            for (let p of pts) {
+                let x = mapX(p[0]), y = mapY(p[1]);
+                ctx.moveTo(x + radius, y); ctx.arc(x, y, radius, 0, 2 * Math.PI);
+            }
+            ctx.fill();
+        }
+
+        function drawPanel(canvasId, pts, color) {
+            let canvas = document.getElementById(canvasId), ctx = canvas.getContext('2d'), dpr = window.devicePixelRatio || 1;
+            let size = canvas.parentElement.clientWidth - 12;
+            canvas.width = canvas.height = size * dpr; canvas.style.width = canvas.style.height = size + 'px';
+            ctx.scale(dpr, dpr); ctx.clearRect(0, 0, size, size);
+            
+            ctx.strokeStyle = 'rgba(0,0,0,0.06)'; ctx.lineWidth = 0.8;
+            ctx.beginPath(); ctx.moveTo(size/2, 0); ctx.lineTo(size/2, size);
+            ctx.moveTo(0, size/2); ctx.lineTo(size, size/2); ctx.stroke();
+            
+            if (pts) drawA(ctx, pts, color);
+        }
+
+        function drawCurrentStep() {
+            let activeHist = results.histories[`${state.rule}_${state.sched}`], states = activeHist.intermediateStates[state.step];
+            drawPanel('canvas-1', states[0], '#718096');
+            states.slice(1).forEach((s, i) => drawPanel(`canvas-${i+2}`, s, '#4f46e5'));
+            drawPanel('canvas-5', results.targetPoints, '#ef4444');
+            
+            activeHist.angles[state.step].forEach((ang, idx) => {
+                document.getElementById(`rot-val-${idx+2}`).innerText = ang.toFixed(1) + '°';
+            });
+        }
+
+        function drawCharts() {
+            let canvas = document.getElementById('loss-chart'), ctx = canvas.getContext('2d'), dpr = window.devicePixelRatio || 1;
+            let width = canvas.parentElement.clientWidth - 24, height = 185;
+            canvas.width = width * dpr; canvas.height = height * dpr;
+            canvas.style.width = width + 'px'; canvas.style.height = height + 'px';
+            ctx.scale(dpr, dpr); ctx.clearRect(0, 0, width, height);
+            
+            let padL = 60, padR = 20, padT = 65, padB = 30, w = width - padL - padR, h = height - padT - padB;
+            let maxY = Math.max(Math.max(...STRATEGIES.flatMap(s => results.histories[s.key].missingAngles)) * 1.1, 10.0);
+            
+            let getX = v => padL + (v / STEPS) * w, getY = v => padT + (1 - v / maxY) * h;
+            
+            ctx.strokeStyle = 'rgba(0,0,0,0.05)'; ctx.lineWidth = 1; ctx.fillStyle = '#4b5563';
+            ctx.font = '10px "JetBrains Mono", sans-serif'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+            
+            [0, 30, 60, 90].forEach(val => {
+                let y = getY(val);
+                if (y >= padT && y <= height - padB) {
+                    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(width - padR, y); ctx.stroke();
+                    ctx.fillText(Math.round(val), padL - 8, y);
+                }
+            });
+            
+            ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+            for (let i = 0; i <= STEPS; i += 5) {
+                let x = getX(i);
+                ctx.beginPath(); ctx.moveTo(x, padT); ctx.lineTo(x, height - padB); ctx.stroke();
+                ctx.fillText(i, x, height - padB + 8);
+            }
+            
+            let activeSer = STRATEGIES.find(s => s.key === `${state.rule}_${state.sched}`);
+            
+            STRATEGIES.forEach(s => {
+                ctx.save();
+                let isAct = s.key === activeSer.key;
+                let yVals = results.histories[s.key].missingAngles;
+                
+                ctx.strokeStyle = isAct ? s.color : hexToRgba(s.color, 0.58);
+                ctx.lineWidth = isAct ? (s.cross ? 1.8 : 2.8) : (s.cross ? 1.2 : 1.8);
+                if (isAct) { ctx.shadowColor = s.color; ctx.shadowBlur = s.cross ? 1.5 : 2; }
+                
+                ctx.beginPath();
+                if (s.cross) {
+                    yVals.forEach((y, i) => {
+                        let x = getX(i), yPos = getY(y);
+                        ctx.moveTo(x - 3, yPos - 3); ctx.lineTo(x + 3, yPos + 3);
+                        ctx.moveTo(x + 3, yPos - 3); ctx.lineTo(x - 3, yPos + 3);
+                    });
+                } else {
+                    ctx.setLineDash(s.dash || []);
+                    yVals.forEach((y, i) => i === 0 ? ctx.moveTo(getX(i), getY(y)) : ctx.lineTo(getX(i), getY(y)));
+                }
+                ctx.stroke();
+                ctx.restore();
+            });
+            
+            let curX = getX(state.step);
+            ctx.strokeStyle = 'rgba(79, 70, 229, 0.4)'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 4]);
+            ctx.beginPath(); ctx.moveTo(curX, padT); ctx.lineTo(curX, height - padB); ctx.stroke(); ctx.setLineDash([]);
+            
+            let actY = results.histories[activeSer.key].missingAngles[state.step];
+            if (actY !== undefined) {
+                ctx.fillStyle = activeSer.color; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.5;
+                ctx.beginPath(); ctx.arc(curX, getY(actY), 4.5, 0, 2 * Math.PI); ctx.fill(); ctx.stroke();
+            }
+            
+            let legW = 270, legH = 34, legX = width - padR - legW - 4, legY = 6;
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.95)'; ctx.strokeStyle = 'rgba(0, 0, 0, 0.12)'; ctx.lineWidth = 1.0;
+            ctx.fillRect(legX, legY, legW, legH); ctx.strokeRect(legX, legY, legW, legH);
+            
+            ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+            STRATEGIES.forEach((s, idx) => {
+                let itemX = legX + 6 + (idx < 2 ? 0 : 1) * 132, itemY = legY + 8.5 + (idx % 2) * 14;
+                let isAct = s.key === activeSer.key;
+                
+                if (isAct) {
+                    ctx.fillStyle = 'rgba(79, 70, 229, 0.07)'; ctx.strokeStyle = 'rgba(79, 70, 229, 0.2)';
+                    ctx.fillRect(itemX - 3, itemY - 6.5, 126, 13); ctx.strokeRect(itemX - 3, itemY - 6.5, 126, 13);
+                }
+                
+                ctx.strokeStyle = s.color; ctx.beginPath();
+                if (s.cross) {
+                    ctx.lineWidth = isAct ? 1.5 : 1.0;
+                    [4, 12].forEach(off => {
+                        let x = itemX + off;
+                        ctx.moveTo(x - 3, itemY - 3); ctx.lineTo(x + 3, itemY + 3);
+                        ctx.moveTo(x + 3, itemY - 3); ctx.lineTo(x - 3, itemY + 3);
+                    });
+                } else {
+                    ctx.lineWidth = 2.0; ctx.setLineDash(s.dash || []);
+                    ctx.moveTo(itemX, itemY); ctx.lineTo(itemX + 18, itemY);
+                }
+                ctx.stroke(); ctx.setLineDash([]);
+                
+                ctx.fillStyle = '#1f2937';
+                ctx.font = isAct ? 'bold 9px "Inter", sans-serif' : '9px "Inter", sans-serif';
+                ctx.fillText(s.label, itemX + 24, itemY);
+            });
+            
+            ctx.fillStyle = '#111827'; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+            ctx.fillText('angle discrepancy', 16, padT - 8);
+        }
+
+        // Canvas Legend Click Interactions
+        function isOverLegend(canvas, clientX, clientY) {
+            const rect = canvas.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            const x = (clientX - rect.left) * (canvas.width / (rect.width * dpr));
+            const y = (clientY - rect.top) * (canvas.height / (rect.height * dpr));
+            const width = canvas.width / dpr;
+            const legW = 270, legH = 34, legX = width - 20 - legW - 4, legY = 6;
+            return {
+                over: x >= legX && x <= legX + legW && y >= legY && y <= legY + legH,
+                x: x - legX,
+                y: y - legY,
+                legW
+            };
+        }
+
+        const lossCanvas = document.getElementById('loss-chart');
+        if (lossCanvas) {
+            lossCanvas.addEventListener('click', e => {
+                const res = isOverLegend(lossCanvas, e.clientX, e.clientY);
+                if (res.over) {
+                    updateBoth(
+                        res.x < res.legW / 2 ? 'backprop' : 'target',
+                        res.y < 17 ? 'parallel' : 'sequential'
+                    );
+                }
+            });
+            lossCanvas.addEventListener('mousemove', e => {
+                lossCanvas.style.cursor = isOverLegend(lossCanvas, e.clientX, e.clientY).over ? 'pointer' : 'default';
+            });
+        }
+
+        // Initialize Timeline/App
+        results.targetPoints = rotatePointCloud(results.points, TARGET_ANGLE);
+        const ticksContainer = document.getElementById('scrub-ticks');
+        for (let i = 0; i <= STEPS; i += 5) {
+            let span = document.createElement('span'); span.innerText = i; ticksContainer.appendChild(span);
+        }
+
+        runSimulation();
+        setPlayback(true);
+    </script>
+</body>
+</html>
