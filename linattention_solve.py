@@ -16,7 +16,7 @@ import numpy as np
 torch.manual_seed(42)
 
 NUM_LAYERS = 3
-LOSS_REDUCTION_FACTOR = 100.0
+LOSS_REDUCTION_FACTOR = 10000.0
 
 def generate_orthogonal_matrix(dim):
     """Generates a random orthogonal matrix using QR decomposition."""
@@ -182,7 +182,7 @@ def find_initial_lrs(student_initial_state, teacher, dim, batch_size, num_rows):
 
 def train():
     start_time = time.time()
-    dim, num_rows, batch_size, max_steps = 32, 8, 32, 1000
+    dim, num_rows, batch_size, max_steps = 32, 8, 32, 10000
 
     print(f"Initializing Teacher Model (layers={NUM_LAYERS}, dim={dim}, seq_len={num_rows})...")
     teacher = MultiLayerSelfAttention(dim).requires_grad_(False)

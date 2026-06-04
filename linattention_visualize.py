@@ -571,7 +571,7 @@ def generate_html_dashboard(num_layers, dim, seq_len, backprop_steps, altprop_st
 
 def train_and_visualize():
     start_time = time.time()
-    dim, num_rows, batch_size, max_steps = 32, 8, 32, 1000
+    dim, num_rows, batch_size, max_steps = 32, 8, 32, 10000
 
     print(f"Initializing Teacher Model (layers={NUM_LAYERS}, dim={dim}, seq_len={num_rows})...")
     teacher = MultiLayerSelfAttention(dim).requires_grad_(False)
@@ -673,7 +673,7 @@ def train_and_visualize():
 
         if classic_reached is not None and fixed_reached is not None:
             final_step = step
-            print(f"Reached 100x reduction: backprop at step {classic_reached}, altprop at step {fixed_reached}; stopping at step {step}.")
+            print(f"Reached {LOSS_REDUCTION_FACTOR:.0f}x reduction: backprop at step {classic_reached}, altprop at step {fixed_reached}; stopping at step {step}.")
             break
     else:
         print(f"Reached max_steps={max_steps} before both hit target. backprop={classic_reached}, altprop={fixed_reached}")
@@ -684,7 +684,7 @@ def train_and_visualize():
     ax1.xaxis.set_major_locator(MaxNLocator(integer=True))
     ax1.plot(class_loss_ind, label='backprop - Fixed Eval Batch', color='#1f77b4', linewidth=3.0)
     ax1.plot(fixed_loss_ind, label='altprop - Fixed Eval Batch', color='#ff7f0e', linewidth=1.5)
-    ax1.axhline(target_eval_loss, color='#333333', linewidth=1.0, linestyle='--', label=f'100x target ({target_eval_loss:.1e})')
+    ax1.axhline(target_eval_loss, color='#333333', linewidth=1.0, linestyle='--', label=f'{LOSS_REDUCTION_FACTOR:.0f}x target ({target_eval_loss:.1e})')
     ax1.set_yscale('log')
     ax1.set_title(f'Reconstruction Loss (MSE) on New Batch over Steps\nStopped at step {final_step} (backprop: {classic_reached or "N/A"}, altprop: {fixed_reached or "N/A"})', fontsize=12, fontweight='bold')
     ax1.set_xlabel('Step', fontsize=11)
