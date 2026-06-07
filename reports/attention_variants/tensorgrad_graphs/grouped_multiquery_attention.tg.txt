@@ -1,0 +1,15 @@
+# score logits_BLGCT
+input_q -D- Wq
+memory_k -D- Wk
+Wq -K- Wk
+# G and C stay free; A_BLGCT = softmax_T(logits_BLGCT)
+# output out_BLD
+A -T- memory_v
+memory_v -D- Wv
+A -G- *group
+Wv -G- *group
+*group -G- Wo
+Wv -K- Wo
+A -C- Wo
+A -L-
+Wo -D-

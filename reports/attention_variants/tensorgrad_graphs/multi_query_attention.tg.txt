@@ -1,0 +1,12 @@
+# score logits_BHLT
+input_q -D- Wq
+memory_k -D- Wk
+Wq -K- Wk
+# H is free only on Q; K/V are shared across H
+# output out_BLD
+A -T- memory_v
+memory_v -D- Wv
+Wv -K- Wo
+A -H- Wo
+A -L-
+Wo -D-

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1340" height="535" viewBox="0 0 1340 535">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="36.0" y="42.0" text-anchor="start" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="25" font-weight="800" fill="#0f172a">Multi-Head Latent Attention</text>
+<text x="36.0" y="68.0" text-anchor="start" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="13" font-weight="400" fill="#475569">A simplified MLA-style low-rank KV cache: store BTR, expand to K/V only when scoring.</text>
+<rect x="185.0" y="255.0" width="530.0" height="245.0" rx="12" fill="none" stroke="#94a3b8" stroke-width="2" stroke-dasharray="7 7"/>
+<text x="450.0" y="277.0" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="13" font-weight="700" fill="#475569">KV cache stored as latent BTR</text>
+<rect x="775.0" y="120.0" width="230.0" height="195.0" rx="12" fill="none" stroke="#94a3b8" stroke-width="2" stroke-dasharray="7 7"/>
+<text x="890.0" y="142.0" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="13" font-weight="700" fill="#475569">attention tensor: BHLT</text>
+<path d="M 80.0,175.0 C 130.8,175.0 174.2,135.0 225.0,135.0" fill="none" stroke="#334155" stroke-width="4"/>
+<rect x="138.5" y="141.0" width="28" height="20" rx="5" fill="#ffffff" fill-opacity="0.92" stroke="#e2e8f0"/><text x="152.5" y="156.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#334155">D</text>
+<path d="M 225.0,135.0 C 274.0,135.0 316.0,135.0 365.0,135.0" fill="none" stroke="#334155" stroke-width="4"/>
+<rect x="281.0" y="121.0" width="28" height="20" rx="5" fill="#ffffff" fill-opacity="0.92" stroke="#e2e8f0"/><text x="295.0" y="136.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#334155">R</text>
+<path d="M 365.0,135.0 C 417.5,135.0 462.5,175.0 515.0,175.0" fill="none" stroke="#334155" stroke-width="4"/>
+<rect x="423.5" y="141.0" width="33" height="20" rx="5" fill="#ffffff" fill-opacity="0.92" stroke="#e2e8f0"/><text x="440.0" y="156.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#334155">H,K</text>
+<path d="M 80.0,350.0 C 130.8,350.0 174.2,350.0 225.0,350.0" fill="none" stroke="#334155" stroke-width="4"/>
+<rect x="138.5" y="336.0" width="28" height="20" rx="5" fill="#ffffff" fill-opacity="0.92" stroke="#e2e8f0"/><text x="152.5" y="351.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#334155">D</text>
+<path d="M 225.0,350.0 C 274.0,350.0 316.0,350.0 365.0,350.0" fill="none" stroke="#334155" stroke-width="4"/>
+<rect x="281.0" y="336.0" width="28" height="20" rx="5" fill="#ffffff" fill-opacity="0.92" stroke="#e2e8f0"/><text x="295.0" y="351.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#334155">R</text>
+<path d="M 365.0,350.0 C 417.5,350.0 462.5,305.0 515.0,305.0" fill="none" stroke="#334155" stroke-width="4"/>
+<rect x="426.0" y="313.5" width="28" height="20" rx="5" fill="#ffffff" fill-opacity="0.92" stroke="#e2e8f0"/><text x="440.0" y="328.5" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#334155">R</text>
+<path d="M 365.0,350.0 C 432.5,350.0 447.5,435.0 515.0,435.0" fill="none" stroke="#334155" stroke-width="4"/>
+<rect x="426.0" y="378.5" width="28" height="20" rx="5" fill="#ffffff" fill-opacity="0.92" stroke="#e2e8f0"/><text x="440.0" y="393.5" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#334155">R</text>
+<path d="M 515.0,305.0 C 567.5,305.0 612.5,305.0 665.0,305.0" fill="none" stroke="#334155" stroke-width="4"/>
+<rect x="573.5" y="291.0" width="33" height="20" rx="5" fill="#ffffff" fill-opacity="0.92" stroke="#e2e8f0"/><text x="590.0" y="306.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#334155">H,K</text>
+<path d="M 515.0,435.0 C 567.5,435.0 612.5,435.0 665.0,435.0" fill="none" stroke="#334155" stroke-width="4"/>
+<rect x="573.5" y="421.0" width="33" height="20" rx="5" fill="#ffffff" fill-opacity="0.92" stroke="#e2e8f0"/><text x="590.0" y="436.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#334155">H,K</text>
+<path d="M 515.0,175.0 C 595.0,175.0 735.0,240.0 815.0,240.0" fill="none" stroke="#334155" stroke-width="4"/>
+<rect x="645.0" y="193.5" width="40" height="20" rx="5" fill="#ffffff" fill-opacity="0.92" stroke="#e2e8f0"/><text x="665.0" y="208.5" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#334155">BLHK</text>
+<path d="M 665.0,305.0 C 717.5,305.0 762.5,240.0 815.0,240.0" fill="none" stroke="#334155" stroke-width="4"/>
+<rect x="720.0" y="258.5" width="40" height="20" rx="5" fill="#ffffff" fill-opacity="0.92" stroke="#e2e8f0"/><text x="740.0" y="273.5" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#334155">BTHK</text>
+<path d="M 815.0,240.0 C 867.5,240.0 912.5,240.0 965.0,240.0" fill="none" stroke="#0f766e" stroke-width="4"/>
+<rect x="870.0" y="226.0" width="40" height="20" rx="5" fill="#ffffff" fill-opacity="0.92" stroke="#e2e8f0"/><text x="890.0" y="241.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#0f766e">BHLT</text>
+<path d="M 965.0,240.0 C 965.0,240.0 965.0,385.0 965.0,385.0" fill="none" stroke="#0f766e" stroke-width="4"/>
+<rect x="945.0" y="298.5" width="40" height="20" rx="5" fill="#ffffff" fill-opacity="0.92" stroke="#e2e8f0"/><text x="965.0" y="313.5" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#0f766e">BHLT</text>
+<path d="M 665.0,435.0 C 745.0,435.0 885.0,385.0 965.0,385.0" fill="none" stroke="#334155" stroke-width="4"/>
+<rect x="795.0" y="396.0" width="40" height="20" rx="5" fill="#ffffff" fill-opacity="0.92" stroke="#e2e8f0"/><text x="815.0" y="411.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#334155">BTHK</text>
+<path d="M 965.0,385.0 C 1015.8,385.0 1059.2,385.0 1110.0,385.0" fill="none" stroke="#334155" stroke-width="4"/>
+<rect x="1017.5" y="371.0" width="40" height="20" rx="5" fill="#ffffff" fill-opacity="0.92" stroke="#e2e8f0"/><text x="1037.5" y="386.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#334155">BLHK</text>
+<path d="M 1110.0,385.0 C 1157.2,385.0 1197.8,385.0 1245.0,385.0" fill="none" stroke="#334155" stroke-width="4"/>
+<rect x="1163.5" y="371.0" width="28" height="20" rx="5" fill="#ffffff" fill-opacity="0.92" stroke="#e2e8f0"/><text x="1177.5" y="386.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#334155">D</text>
+<rect x="32.0" y="147.0" width="96" height="56" rx="10" fill="#f8fafc" stroke="#334155" stroke-width="2.2"/>
+<text x="80.0" y="171.0" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="14" font-weight="700" fill="#111827">input</text>
+<text x="80.0" y="193.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#475569">BLD</text>
+<rect x="32.0" y="322.0" width="96" height="56" rx="10" fill="#f8fafc" stroke="#334155" stroke-width="2.2"/>
+<text x="80.0" y="346.0" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="14" font-weight="700" fill="#111827">memory</text>
+<text x="80.0" y="368.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#475569">BTD</text>
+<rect x="186.0" y="110.0" width="78" height="50" rx="10" fill="#eef2ff" stroke="#4338ca" stroke-width="2.2"/>
+<text x="225.0" y="131.0" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="14" font-weight="700" fill="#111827">W^DQ</text>
+<text x="225.0" y="150.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#475569">DR</text>
+<rect x="326.0" y="110.0" width="78" height="50" rx="10" fill="#eef2ff" stroke="#4338ca" stroke-width="2.2"/>
+<text x="365.0" y="131.0" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="14" font-weight="700" fill="#111827">W^UQ</text>
+<text x="365.0" y="150.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#475569">RHK</text>
+<rect x="467.0" y="147.0" width="96" height="56" rx="10" fill="#ecfeff" stroke="#0e7490" stroke-width="2.2"/>
+<text x="515.0" y="171.0" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="14" font-weight="700" fill="#111827">Q</text>
+<text x="515.0" y="193.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#475569">BLHK</text>
+<rect x="186.0" y="325.0" width="78" height="50" rx="10" fill="#eef2ff" stroke="#4338ca" stroke-width="2.2"/>
+<text x="225.0" y="346.0" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="14" font-weight="700" fill="#111827">W^DKV</text>
+<text x="225.0" y="365.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#475569">DR</text>
+<rect x="307.0" y="324.0" width="116" height="52" rx="10" fill="#f0fdf4" stroke="#15803d" stroke-width="2.2"/>
+<text x="365.0" y="346.0" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="14" font-weight="700" fill="#111827">latent KV</text>
+<text x="365.0" y="366.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#475569">BTR</text>
+<rect x="476.0" y="280.0" width="78" height="50" rx="10" fill="#eef2ff" stroke="#4338ca" stroke-width="2.2"/>
+<text x="515.0" y="301.0" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="14" font-weight="700" fill="#111827">W^UK</text>
+<text x="515.0" y="320.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#475569">RHK</text>
+<rect x="476.0" y="410.0" width="78" height="50" rx="10" fill="#eef2ff" stroke="#4338ca" stroke-width="2.2"/>
+<text x="515.0" y="431.0" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="14" font-weight="700" fill="#111827">W^UV</text>
+<text x="515.0" y="450.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#475569">RHK</text>
+<rect x="617.0" y="277.0" width="96" height="56" rx="10" fill="#ecfeff" stroke="#0e7490" stroke-width="2.2"/>
+<text x="665.0" y="301.0" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="14" font-weight="700" fill="#111827">K</text>
+<text x="665.0" y="323.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#475569">BTHK</text>
+<rect x="617.0" y="407.0" width="96" height="56" rx="10" fill="#ecfeff" stroke="#0e7490" stroke-width="2.2"/>
+<text x="665.0" y="431.0" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="14" font-weight="700" fill="#111827">V</text>
+<text x="665.0" y="453.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#475569">BTHK</text>
+<rect x="759.0" y="214.0" width="112" height="52" rx="10" fill="#fff7ed" stroke="#c2410c" stroke-width="2.2"/>
+<text x="815.0" y="236.0" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="14" font-weight="700" fill="#111827">QK^T</text>
+<text x="815.0" y="256.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#475569">BHLT</text>
+<rect x="909.0" y="214.0" width="112" height="52" rx="10" fill="#fff7ed" stroke="#c2410c" stroke-width="2.2"/>
+<text x="965.0" y="236.0" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="14" font-weight="700" fill="#111827">softmax_T</text>
+<text x="965.0" y="256.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#475569">BHLT</text>
+<rect x="909.0" y="359.0" width="112" height="52" rx="10" fill="#fff7ed" stroke="#c2410c" stroke-width="2.2"/>
+<text x="965.0" y="381.0" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="14" font-weight="700" fill="#111827">A V</text>
+<text x="965.0" y="401.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#475569">BLHK</text>
+<rect x="1071.0" y="360.0" width="78" height="50" rx="10" fill="#eef2ff" stroke="#4338ca" stroke-width="2.2"/>
+<text x="1110.0" y="381.0" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="14" font-weight="700" fill="#111827">W^O</text>
+<text x="1110.0" y="400.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#475569">HKD</text>
+<rect x="1197.0" y="357.0" width="96" height="56" rx="10" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2.2"/>
+<text x="1245.0" y="381.0" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="14" font-weight="700" fill="#111827">out</text>
+<text x="1245.0" y="403.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#475569">BLD</text>
+</svg>

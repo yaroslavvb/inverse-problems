@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="535" viewBox="0 0 1240 535">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="36.0" y="42.0" text-anchor="start" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="25" font-weight="800" fill="#0f172a">Grouped Multi-Query / Grouped-Query Attention</text>
+<text x="36.0" y="68.0" text-anchor="start" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="13" font-weight="400" fill="#475569">C query heads share one K/V group; H = G*C.</text>
+<rect x="500.0" y="120.0" width="390.0" height="210.0" rx="12" fill="none" stroke="#94a3b8" stroke-width="2" stroke-dasharray="7 7"/>
+<text x="695.0" y="142.0" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="13" font-weight="700" fill="#475569">attention tensor: B,L,G,C,T</text>
+<rect x="780.0" y="335.0" width="280.0" height="115.0" rx="12" fill="none" stroke="#94a3b8" stroke-width="2" stroke-dasharray="7 7"/>
+<text x="920.0" y="357.0" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="13" font-weight="700" fill="#475569">value mixing + output</text>
+<path d="M 80.0,175.0 C 134.2,175.0 180.8,175.0 235.0,175.0" fill="none" stroke="#334155" stroke-width="4"/>
+<rect x="143.5" y="161.0" width="28" height="20" rx="5" fill="#ffffff" fill-opacity="0.92" stroke="#e2e8f0"/><text x="157.5" y="176.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#334155">D</text>
+<path d="M 235.0,175.0 C 285.8,175.0 329.2,175.0 380.0,175.0" fill="none" stroke="#334155" stroke-width="4"/>
+<rect x="284.0" y="161.0" width="47" height="20" rx="5" fill="#ffffff" fill-opacity="0.92" stroke="#e2e8f0"/><text x="307.5" y="176.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#334155">G,C,K</text>
+<path d="M 80.0,305.0 C 134.2,305.0 180.8,305.0 235.0,305.0" fill="none" stroke="#334155" stroke-width="4"/>
+<rect x="143.5" y="291.0" width="28" height="20" rx="5" fill="#ffffff" fill-opacity="0.92" stroke="#e2e8f0"/><text x="157.5" y="306.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#334155">D</text>
+<path d="M 235.0,305.0 C 285.8,305.0 329.2,305.0 380.0,305.0" fill="none" stroke="#334155" stroke-width="4"/>
+<rect x="291.0" y="291.0" width="33" height="20" rx="5" fill="#ffffff" fill-opacity="0.92" stroke="#e2e8f0"/><text x="307.5" y="306.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#334155">G,K</text>
+<path d="M 80.0,435.0 C 134.2,435.0 180.8,435.0 235.0,435.0" fill="none" stroke="#334155" stroke-width="4"/>
+<rect x="143.5" y="421.0" width="28" height="20" rx="5" fill="#ffffff" fill-opacity="0.92" stroke="#e2e8f0"/><text x="157.5" y="436.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#334155">D</text>
+<path d="M 235.0,435.0 C 285.8,435.0 329.2,435.0 380.0,435.0" fill="none" stroke="#334155" stroke-width="4"/>
+<rect x="291.0" y="421.0" width="33" height="20" rx="5" fill="#ffffff" fill-opacity="0.92" stroke="#e2e8f0"/><text x="307.5" y="436.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#334155">G,K</text>
+<path d="M 380.0,175.0 C 437.8,175.0 487.2,240.0 545.0,240.0" fill="none" stroke="#334155" stroke-width="4"/>
+<rect x="439.0" y="193.5" width="47" height="20" rx="5" fill="#ffffff" fill-opacity="0.92" stroke="#e2e8f0"/><text x="462.5" y="208.5" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#334155">BLGCK</text>
+<path d="M 380.0,305.0 C 437.8,305.0 487.2,240.0 545.0,240.0" fill="none" stroke="#334155" stroke-width="4"/>
+<rect x="442.5" y="258.5" width="40" height="20" rx="5" fill="#ffffff" fill-opacity="0.92" stroke="#e2e8f0"/><text x="462.5" y="273.5" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#334155">BTGK</text>
+<path d="M 545.0,240.0 C 597.5,240.0 642.5,240.0 695.0,240.0" fill="none" stroke="#0f766e" stroke-width="4"/>
+<rect x="596.5" y="226.0" width="47" height="20" rx="5" fill="#ffffff" fill-opacity="0.92" stroke="#e2e8f0"/><text x="620.0" y="241.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#0f766e">BLGCT</text>
+<path d="M 695.0,240.0 C 747.5,240.0 792.5,240.0 845.0,240.0" fill="none" stroke="#0f766e" stroke-width="4"/>
+<rect x="746.5" y="226.0" width="47" height="20" rx="5" fill="#ffffff" fill-opacity="0.92" stroke="#e2e8f0"/><text x="770.0" y="241.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#0f766e">BLGCT</text>
+<path d="M 845.0,240.0 C 845.0,240.0 845.0,385.0 845.0,385.0" fill="none" stroke="#0f766e" stroke-width="4"/>
+<rect x="821.5" y="298.5" width="47" height="20" rx="5" fill="#ffffff" fill-opacity="0.92" stroke="#e2e8f0"/><text x="845.0" y="313.5" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#0f766e">BLGCT</text>
+<path d="M 380.0,435.0 C 460.0,435.0 765.0,385.0 845.0,385.0" fill="none" stroke="#334155" stroke-width="4"/>
+<rect x="592.5" y="396.0" width="40" height="20" rx="5" fill="#ffffff" fill-opacity="0.92" stroke="#e2e8f0"/><text x="612.5" y="411.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#334155">BTGK</text>
+<path d="M 845.0,385.0 C 901.0,385.0 949.0,385.0 1005.0,385.0" fill="none" stroke="#334155" stroke-width="4"/>
+<rect x="901.5" y="371.0" width="47" height="20" rx="5" fill="#ffffff" fill-opacity="0.92" stroke="#e2e8f0"/><text x="925.0" y="386.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#334155">BLGCK</text>
+<path d="M 1005.0,385.0 C 1054.0,385.0 1096.0,385.0 1145.0,385.0" fill="none" stroke="#334155" stroke-width="4"/>
+<rect x="1061.0" y="371.0" width="28" height="20" rx="5" fill="#ffffff" fill-opacity="0.92" stroke="#e2e8f0"/><text x="1075.0" y="386.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#334155">D</text>
+<rect x="32.0" y="147.0" width="96" height="56" rx="10" fill="#f8fafc" stroke="#334155" stroke-width="2.2"/>
+<text x="80.0" y="171.0" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="14" font-weight="700" fill="#111827">input</text>
+<text x="80.0" y="193.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#475569">BLD</text>
+<rect x="32.0" y="277.0" width="96" height="56" rx="10" fill="#f8fafc" stroke="#334155" stroke-width="2.2"/>
+<text x="80.0" y="301.0" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="14" font-weight="700" fill="#111827">memory</text>
+<text x="80.0" y="323.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#475569">BTD</text>
+<rect x="32.0" y="407.0" width="96" height="56" rx="10" fill="#f8fafc" stroke="#334155" stroke-width="2.2"/>
+<text x="80.0" y="431.0" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="14" font-weight="700" fill="#111827">memory</text>
+<text x="80.0" y="453.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#475569">BTD</text>
+<rect x="196.0" y="150.0" width="78" height="50" rx="10" fill="#eef2ff" stroke="#4338ca" stroke-width="2.2"/>
+<text x="235.0" y="171.0" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="14" font-weight="700" fill="#111827">W^Q</text>
+<text x="235.0" y="190.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#475569">DGCK</text>
+<rect x="196.0" y="280.0" width="78" height="50" rx="10" fill="#eef2ff" stroke="#4338ca" stroke-width="2.2"/>
+<text x="235.0" y="301.0" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="14" font-weight="700" fill="#111827">W^K</text>
+<text x="235.0" y="320.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#475569">DGK</text>
+<rect x="196.0" y="410.0" width="78" height="50" rx="10" fill="#eef2ff" stroke="#4338ca" stroke-width="2.2"/>
+<text x="235.0" y="431.0" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="14" font-weight="700" fill="#111827">W^V</text>
+<text x="235.0" y="450.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#475569">DGK</text>
+<rect x="332.0" y="147.0" width="96" height="56" rx="10" fill="#ecfeff" stroke="#0e7490" stroke-width="2.2"/>
+<text x="380.0" y="171.0" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="14" font-weight="700" fill="#111827">Q</text>
+<text x="380.0" y="193.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#475569">BLGCK</text>
+<rect x="332.0" y="277.0" width="96" height="56" rx="10" fill="#ecfeff" stroke="#0e7490" stroke-width="2.2"/>
+<text x="380.0" y="301.0" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="14" font-weight="700" fill="#111827">K</text>
+<text x="380.0" y="323.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#475569">BTGK</text>
+<rect x="332.0" y="407.0" width="96" height="56" rx="10" fill="#ecfeff" stroke="#0e7490" stroke-width="2.2"/>
+<text x="380.0" y="431.0" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="14" font-weight="700" fill="#111827">V</text>
+<text x="380.0" y="453.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#475569">BTGK</text>
+<rect x="489.0" y="214.0" width="112" height="52" rx="10" fill="#fff7ed" stroke="#c2410c" stroke-width="2.2"/>
+<text x="545.0" y="236.0" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="14" font-weight="700" fill="#111827">QK^T</text>
+<text x="545.0" y="256.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#475569">BLGCT</text>
+<rect x="639.0" y="214.0" width="112" height="52" rx="10" fill="#fff7ed" stroke="#c2410c" stroke-width="2.2"/>
+<text x="695.0" y="236.0" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="14" font-weight="700" fill="#111827">softmax_T</text>
+<text x="695.0" y="256.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#475569">BLGCT</text>
+<rect x="797.0" y="212.0" width="96" height="56" rx="10" fill="#ecfeff" stroke="#0e7490" stroke-width="2.2"/>
+<text x="845.0" y="236.0" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="14" font-weight="700" fill="#111827">A</text>
+<text x="845.0" y="258.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#475569">BLGCT</text>
+<rect x="789.0" y="359.0" width="112" height="52" rx="10" fill="#fff7ed" stroke="#c2410c" stroke-width="2.2"/>
+<text x="845.0" y="381.0" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="14" font-weight="700" fill="#111827">A V</text>
+<text x="845.0" y="401.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#475569">BLGCK</text>
+<rect x="966.0" y="360.0" width="78" height="50" rx="10" fill="#eef2ff" stroke="#4338ca" stroke-width="2.2"/>
+<text x="1005.0" y="381.0" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="14" font-weight="700" fill="#111827">W^O</text>
+<text x="1005.0" y="400.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#475569">GCKD</text>
+<rect x="1097.0" y="357.0" width="96" height="56" rx="10" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2.2"/>
+<text x="1145.0" y="381.0" text-anchor="middle" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="14" font-weight="700" fill="#111827">out</text>
+<text x="1145.0" y="403.0" text-anchor="middle" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="11" font-weight="400" fill="#475569">BLD</text>
+</svg>

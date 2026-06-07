@@ -1,0 +1,9 @@
+# reassociated value summary
+phi_K -T- V
+phi_K -F- KV_summary
+V -K- KV_summary
+# query reads the summary and normalization
+phi_Q -F- KV_summary
+phi_Q -F- K_sum
+KV_summary -K- Wo
+Wo -D-

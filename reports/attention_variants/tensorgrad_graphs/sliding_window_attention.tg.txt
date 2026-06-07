@@ -1,0 +1,8 @@
+# score logits_BHLT with a structural mask
+input_q -D- Wq
+memory_k -D- Wk
+Wq -K- Wk
+# H remains a free shared edge in logits_BHLT
+window_mask -L-T- logits
+# A_BHLT = softmax_T(masked_logits_BHLT)
+# value/output graph is the same as multi-head attention

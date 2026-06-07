@@ -1,0 +1,15 @@
+# score logits_BHLT
+input_q -D- Wq
+memory_k -D- Wk
+Wq -K- Wk
+# H remains a free shared edge in logits_BHLT
+# A_BHLT = softmax_T(logits_BHLT)
+# output out_BLD
+A -T- memory_v
+memory_v -D- Wv
+A -H- *head
+Wv -H- *head
+*head -H- Wo
+Wv -K- Wo
+A -L-
+Wo -D-

@@ -1,0 +1,11 @@
+# low-rank query path
+input_q -D- Wq_down -R- Wq_up
+# compressed KV cache path
+memory -D- Wkv_down -R- latent_kv
+latent_kv -R- Wk_up
+latent_kv -R- Wv_up
+# then ordinary score/value contractions
+Q -K- K
+A -T- V
+V -K- Wo
+Wo -D-

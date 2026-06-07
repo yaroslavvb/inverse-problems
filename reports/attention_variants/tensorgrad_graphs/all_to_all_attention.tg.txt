@@ -1,0 +1,14 @@
+# score logits_BLQGT
+input_q -D- Wq
+memory_k -D- Wk
+Wq -K- Wk
+# Q and G both stay visible in the attention tensor
+# A_BLQGT = softmax_GT(logits_BLQGT)
+# output out_BLD
+A -T- memory_v
+memory_v -D- Wv
+A -G- Wv
+Wv -K- Wo
+A -Q- Wo
+A -L-
+Wo -D-
