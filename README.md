@@ -53,10 +53,10 @@ uv run ortho_updates.py             # full comparison sweep
   solver converges in 10 alternations
   ([detailed report](https://yaroslavvb.github.io/inverse-problems/reports/two_block_report.html));
   closed-form W_v + rotation steps reaches 1e-12 in ~121 steps vs 338 for Adam
-- Generic manifold methods (expm/Cayley/QR/polar, ~246 steps) beat Adam but only match well-tuned plain SGD (221),
-  and deliver an exactly orthogonal solution (~1e-13); the rotation-angle-parameterized optimizers
-  (so(n)-Adam, trivialization, clipped momentum) are slower (~290-314) but tolerate a ~10x wider learning-rate window
+- Generic manifold methods (expm/Cayley/QR/polar, ~246 steps) beat Adam but only match well-tuned plain SGD (221);
+  the rotation-angle-parameterized optimizers (so(n)-Adam, trivialization, clipped momentum) are slower deep
+  (~290-314) but tolerate a ~10x wider learning-rate window
 - **Determinant obstruction**: det-preserving updates can't leave a connected component of O(n) — 3/4 of random
-  inits floor at ~5e-4 unless the init's det signs are matched to the teacher (one column flip)
-- All converged methods recover the teacher up to the model's gauge symmetries; Euclidean ones end 0.1-1.0
-  off-manifold (transient drift up to ~4.5) by absorbing the continuous scale gauge
+  inits floor at ~5e-4 error unless the init's det signs are matched to the teacher (one column flip)
+- Re-tuned for the first 100x error reduction, the ranking inverts: procrustes_alt crosses in 20 steps and
+  decoupled Adam in 53, vs 78 for Adam and 138 for the manifold family

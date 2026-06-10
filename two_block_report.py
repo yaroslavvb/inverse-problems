@@ -146,8 +146,7 @@ def main():
         results[f"seed_{seed}"] = {"after_a": r2["after_a"]}
         print(f"seed {seed}: {len(r2['after_a'])} alternations, final {r2['after_a'][-1]:.2e}")
 
-    plt.figure(figsize=(11, 4.6))
-    plt.subplot(1, 2, 1)
+    plt.figure(figsize=(7.5, 4.8))
     n = len(rec["after_a"])
     xs = np.arange(1, n + 1)
     half = np.empty(2 * n)
@@ -163,13 +162,6 @@ def main():
     plt.title("Half-step convergence (seed 42, B=64)")
     plt.legend(fontsize=8)
     plt.grid(True, which="both", alpha=0.3)
-    plt.subplot(1, 2, 2)
-    plt.semilogy(xs, rec["dist"], "o-", label="gauge-quotiented distance to teacher")
-    plt.semilogy(xs, rec["ortho"], "s-", label=r"max $\|W^T W - I\|_F$")
-    plt.xlabel("alternation")
-    plt.legend(fontsize=8)
-    plt.grid(True, which="both", alpha=0.3)
-    plt.title("Teacher recovery and orthogonality")
     plt.tight_layout()
     plt.savefig("reports/two_block_convergence.png", dpi=150)
     plt.close()

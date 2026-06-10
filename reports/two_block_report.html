@@ -199,35 +199,31 @@ def polar(Z, eps=1e-30):                                      # Z (Z^T Z)^{-1/2}
         From the standard unaligned seed-42 init (eval MSE 8.7e-3):
     </p>
     <table>
-        <thead><tr><th>alternation</th><th class="num">after block V</th><th class="num">after block A</th>
-            <th class="num">distance to teacher (gauge-quotiented)</th><th class="num">max ‖W<sup>T</sup>W−I‖</th></tr></thead>
+        <thead><tr><th>alternation</th><th class="num">eval MSE after block V</th><th class="num">eval MSE after block A</th></tr></thead>
         <tbody>
-        <tr><td>1</td><td class="num">8.0e-3</td><td class="num">7.7e-3</td><td class="num">10.8</td><td class="num">3.4e-10</td></tr>
-        <tr><td>2</td><td class="num">7.6e-3</td><td class="num">7.1e-3</td><td class="num">9.5</td><td class="num">8.6e-14</td></tr>
-        <tr><td>3</td><td class="num">5.7e-3</td><td class="num">2.3e-3</td><td class="num">4.3</td><td class="num">4.7e-14</td></tr>
-        <tr><td>4</td><td class="num">3.8e-4</td><td class="num">2.5e-5</td><td class="num">4.5e-1</td><td class="num">1.5e-14</td></tr>
-        <tr><td>5</td><td class="num">3.4e-6</td><td class="num">2.1e-7</td><td class="num">4.0e-2</td><td class="num">1.8e-14</td></tr>
-        <tr><td>6</td><td class="num">2.8e-8</td><td class="num">1.5e-9</td><td class="num">3.4e-3</td><td class="num">1.6e-14</td></tr>
-        <tr><td>7</td><td class="num">1.9e-10</td><td class="num">1.2e-11</td><td class="num">3.1e-4</td><td class="num">1.7e-14</td></tr>
-        <tr><td>8</td><td class="num">1.5e-12</td><td class="num">1.1e-13</td><td class="num">2.9e-5</td><td class="num">1.6e-14</td></tr>
-        <tr><td>9</td><td class="num">1.5e-14</td><td class="num">9.2e-16</td><td class="num">2.7e-6</td><td class="num">1.7e-14</td></tr>
-        <tr><td>10</td><td class="num">1.2e-16</td><td class="num">8.6e-18</td><td class="num">2.5e-7</td><td class="num">1.5e-14</td></tr>
+        <tr><td>1</td><td class="num">8.0e-3</td><td class="num">7.7e-3</td></tr>
+        <tr><td>2</td><td class="num">7.6e-3</td><td class="num">7.1e-3</td></tr>
+        <tr><td>3</td><td class="num">5.7e-3</td><td class="num">2.3e-3</td></tr>
+        <tr><td>4</td><td class="num">3.8e-4</td><td class="num">2.5e-5</td></tr>
+        <tr><td>5</td><td class="num">3.4e-6</td><td class="num">2.1e-7</td></tr>
+        <tr><td>6</td><td class="num">2.8e-8</td><td class="num">1.5e-9</td></tr>
+        <tr><td>7</td><td class="num">1.9e-10</td><td class="num">1.2e-11</td></tr>
+        <tr><td>8</td><td class="num">1.5e-12</td><td class="num">1.1e-13</td></tr>
+        <tr><td>9</td><td class="num">1.5e-14</td><td class="num">9.2e-16</td></tr>
+        <tr><td>10</td><td class="num">1.2e-16</td><td class="num">8.6e-18</td></tr>
         </tbody>
     </table>
     <p>
         Three regimes are visible. Alternations 1–3 are a slow capture phase: each block solves against a badly wrong
         other block, so the closed forms make limited progress (the first A is the polar projection of a far-from-orthogonal
-        least-squares fit). From alternation 4 on, convergence is geometric at a remarkably steady <b>~100x per
-        alternation</b> (~7x from the block-V half-step times ~15x from the block-A half-step), and the gauge-quotiented
-        weight distance contracts ~10x per alternation — consistent with MSE ≈ distance². This is the expected behavior of alternating minimization on
-        a realizable bilinear problem: the error in each block's solve is proportional to the current error of the
-        <i>other</i> block, giving multiplicative contraction. Orthogonality is at machine precision (~1e-14)
-        from alternation 2 onward — the iterates are not approximately orthogonal, they are exactly orthogonal
-        by construction of the polar map.
+        least-squares fit). From alternation 4 on, the error decays geometrically at a remarkably steady <b>~100x per
+        alternation</b> (~7x from the block-V half-step times ~15x from the block-A half-step). This is the expected
+        behavior of alternating minimization on a realizable bilinear problem: the error in each block's solve is
+        proportional to the current error of the <i>other</i> block, giving multiplicative contraction.
         (For the cross-method view of this early regime — steps to the first 100x loss reduction, where the solver
-        crosses at alternation 4 — see <a href="ortho_updates_report.html">main report, Finding 6</a>.)
+        crosses at alternation 4 — see <a href="ortho_updates_report.html">main report, Finding 5</a>.)
     </p>
-    <img class="plot" src="two_block_convergence.png" alt="Half-step convergence and teacher recovery">
+    <img class="plot" src="two_block_convergence.png" alt="Half-step eval MSE convergence">
 </div>
 
 <h2>5. Identifiability: the rank bound is exactly tight</h2>
@@ -312,8 +308,8 @@ def polar(Z, eps=1e-30):                                      # Z (Z^T Z)^{-1/2}
             exploiting Φ's Kronecker structure.</li>
         <li><b>Honest wall-clock comparison</b>: at this scale a full 338-step Adam run also takes only seconds.
             The solver's advantages are alternation count (10 vs hundreds of steps), sample efficiency per unit
-            of progress, terminal accuracy (8.6e-18 vs ~9e-17 where gradient runs stop), exact orthogonality
-            throughout, and zero hyperparameters — not raw seconds at D=32.</li>
+            of progress, terminal accuracy (8.6e-18 vs ~9e-17 where gradient runs stop), and zero
+            hyperparameters — not raw seconds at D=32.</li>
     </ul>
 </div>
 

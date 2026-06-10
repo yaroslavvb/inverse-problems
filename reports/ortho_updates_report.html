@@ -103,9 +103,9 @@
         topological obstruction (determinant components of O(n)), not a tuning problem. Euclidean methods tunnel through.</div>
     </div>
     <div class="tldr-card">
-        <div class="big">~1e-13 vs ~1</div>
-        <div class="label">final ||W<sup>T</sup>W−I||: manifold methods return an exactly-orthogonal solution;
-        Adam's solution settles ~1.0 off the manifold (transient drift up to 4.5) — yet still recovers the teacher up to gauge.</div>
+        <div class="big">20 vs 78 steps</div>
+        <div class="label">re-tuned for the first 100x error reduction, the ranking inverts: procrustes_alt crosses in 20 steps
+        and decoupled Adam in 53, vs 78 for Adam and 138 for the manifold family (Finding 5).</div>
     </div>
 </div>
 
@@ -121,8 +121,9 @@
         <b>Key structure.</b> The map depends on the weights only through <b>(A, W<sub>v</sub>)</b> with
         <b>A = W<sub>q</sub>W<sub>k</sub><sup>T</sup></b>; it is <i>bilinear</i> in (A, W<sub>v</sub>). Two exact symmetries follow:
         the gauge orbit (W<sub>q</sub>R, W<sub>k</sub>R) for any orthogonal R, and the scale gauge
-        (cA, W<sub>v</sub>/c) for any c≠0 (only c=±1 stays on the manifold). All "distance to teacher" numbers
-        below quotient these gauges out.
+        (cA, W<sub>v</sub>/c) for any c≠0. The metric throughout is <b>eval MSE only</b> — whether the student's
+        weights end up orthogonal is not tracked; the teacher's orthogonality matters solely through the structure
+        it gives the problem (closed-form subproblems, determinant reachability conditions).
     </p>
     <p>
         <b>Conventions</b> (each verified numerically by <code>ortho_updates.py --verify</code>):
@@ -148,48 +149,49 @@
         <th>update rule (per W, G = ∂L/∂W, Ω = skew(W<sup>T</sup>G))</th>
         <th>best config</th>
         <th class="num">steps to 1e-12<br>(seeds 42 / 43 / 44)</th>
-        <th class="num">final ‖W<sup>T</sup>W−I‖</th>
-        <th class="num">teacher dist<br>(gauge-quotiented)</th>
+        <th class="num">final eval MSE*</th>
     </tr>
     </thead>
     <tbody>
     <tr><td><b><a href="two_block_report.html">two_block_exact</a></b> <span class="badge">solver</span></td>
         <td>alternate: W<sub>v</sub> ← polar(M<sup>T</sup>Y) (Procrustes); A ← polar(lstsq(Φ, vec Y)); W<sub>q</sub> ← A·W<sub>k</sub></td>
-        <td>B=64, no lr</td><td class="num"><b>10 alternations</b></td><td class="num">1e-14</td><td class="num">2.5e-7</td></tr>
+        <td>B=64, no lr</td><td class="num"><b>10 alternations</b></td><td class="num">8.6e-18</td></tr>
     <tr><td><b>procrustes_alt</b></td>
         <td>expm steps on W<sub>q</sub>, W<sub>k</sub>; closed-form Procrustes W<sub>v</sub> ← polar(M<sup>T</sup>Y) each step</td>
-        <td>lr 316</td><td class="num"><b>121 / 100 / 119</b></td><td class="num">3e-13</td><td class="num">9.4e-7</td></tr>
+        <td>lr 316</td><td class="num"><b>121 / 100 / 119</b></td><td class="num">9.8e-17</td></tr>
     <tr><td>sgd</td><td>W ← W − lr·G</td>
-        <td>lr 316</td><td class="num">221 / 185 / 218</td><td class="num">3.9 transient → 8e-2</td><td class="num">8.8e-7</td></tr>
+        <td>lr 316</td><td class="num">221 / 185 / 218</td><td class="num">8.7e-17</td></tr>
     <tr><td>landing</td><td>W ← W − lr·skew(GW<sup>T</sup>)W − γ·W(W<sup>T</sup>W−I)</td>
-        <td>lr 316, γ 0.1</td><td class="num">244 / 218 / 235</td><td class="num">8e-2 transient → 1e-13</td><td class="num">8.6e-7</td></tr>
+        <td>lr 316, γ 0.1</td><td class="num">244 / 218 / 235</td><td class="num">9.1e-17</td></tr>
     <tr><td>exp_sgd</td><td>W ← W·expm(−lr·Ω)</td>
-        <td>lr 316</td><td class="num">246 / 219 / 236</td><td class="num">3e-13</td><td class="num">8.6e-7</td></tr>
+        <td>lr 316</td><td class="num">246 / 219 / 236</td><td class="num">9.1e-17</td></tr>
     <tr><td>cayley_sgd</td><td>W ← W·(I+lr·Ω/2)<sup>−1</sup>(I−lr·Ω/2)</td>
-        <td>lr 316</td><td class="num">246 / 220 / 236</td><td class="num">2e-13</td><td class="num">8.6e-7</td></tr>
+        <td>lr 316</td><td class="num">246 / 220 / 236</td><td class="num">9.2e-17</td></tr>
     <tr><td>qr_retraction</td><td>W ← qf(W − lr·WΩ)</td>
-        <td>lr 316</td><td class="num">246 / 220 / 236</td><td class="num">4e-15</td><td class="num">8.8e-7</td></tr>
+        <td>lr 316</td><td class="num">246 / 220 / 236</td><td class="num">9.4e-17</td></tr>
     <tr><td>polar_retraction</td><td>W ← polar(W − lr·WΩ)</td>
-        <td>lr 316</td><td class="num">246 / 220 / 236</td><td class="num">2e-14</td><td class="num">8.7e-7</td></tr>
+        <td>lr 316</td><td class="num">246 / 220 / 236</td><td class="num">9.3e-17</td></tr>
     <tr><td>exp_momentum</td><td>M ← 0.9M+Ω; W ← W·expm(−clip(lr·M, θ≤0.3))</td>
-        <td>lr 100</td><td class="num">290 / 304 / 288</td><td class="num">4e-13</td><td class="num">8.0e-7</td></tr>
+        <td>lr 100</td><td class="num">290 / 304 / 288</td><td class="num">9.3e-17</td></tr>
     <tr><td>adam_decoupled_orth</td><td>Adam on G, then W ← W − γ·W(W<sup>T</sup>W−I) outside Adam</td>
-        <td>lr 0.01, γ 0.03</td><td class="num">290 / 260 / 293</td><td class="num">3.6 transient → 4e-7</td><td class="num">8.0e-7</td></tr>
+        <td>lr 0.01, γ 0.03</td><td class="num">290 / 260 / 293</td><td class="num">9.4e-17</td></tr>
     <tr><td>so_adam</td><td>Adam moments on Ω in so(n); W ← W·expm(−lr·m̂/(√v̂+ε))</td>
-        <td>lr 0.0316</td><td class="num">310 / 316 / 309</td><td class="num">2e-13</td><td class="num">8.5e-7</td></tr>
+        <td>lr 0.0316</td><td class="num">310 / 316 / 309</td><td class="num">9.9e-17</td></tr>
     <tr><td>triv_adam</td><td>W = W<sub>0</sub>·expm(skew(A)), Adam on A, dynamic rebase at ‖·‖=0.7</td>
-        <td>lr 0.0316</td><td class="num">314 / 312 / 311</td><td class="num">5e-14</td><td class="num">8.3e-7</td></tr>
+        <td>lr 0.0316</td><td class="num">314 / 312 / 311</td><td class="num">9.7e-17</td></tr>
     <tr><td>penalty_adam <span class="badge fail">fragile</span></td><td>Adam on loss + μ·Σ‖W<sup>T</sup>W−I‖²</td>
-        <td>lr 0.1, μ 1e-3</td><td class="num">322 / fail / fail</td><td class="num">3.5 transient</td><td class="num">8.5e-7</td></tr>
+        <td>lr 0.1, μ 1e-3</td><td class="num">322 / fail / fail</td><td class="num">9.9e-17</td></tr>
     <tr><td><b>adam</b> (baseline)</td><td>plain Adam on raw entries</td>
-        <td>lr 0.01</td><td class="num">338 / 319 / 362</td><td class="num">4.5 transient → 1.0</td><td class="num">8.2e-7</td></tr>
+        <td>lr 0.01</td><td class="num">338 / 319 / 362</td><td class="num">9.5e-17</td></tr>
     <tr><td>muon_polar <span class="badge fail">orbits</span></td><td>M ← 0.9M+G; W ← polar(W − lr·polar(M))</td>
-        <td>lr 0.0316</td><td class="num">never (floor 3.6e-5)</td><td class="num">2e-14</td><td class="num">0.51</td></tr>
+        <td>lr 0.0316</td><td class="num">never</td><td class="num">3.6e-5 (floor)</td></tr>
     </tbody>
 </table>
-<p class="muted">All entries: det-aligned init, best LR from the sweep, 800-step budget. "fail" for penalty_adam
-means its seed-42-tuned (lr, μ) did not reach 1e-12 on seeds 43/44 (floors at ~5e-4 / 9e-4). Unaligned-init
-results are in §4. Full per-LR tables: <code>ortho_updates_results.json</code>.</p>
+<p class="muted">All entries: det-aligned init, best LR from the sweep, 800-step budget. *Converged runs early-stop
+once eval MSE ≤ 1e-16, so ~1e-16 means "solved to float64 machine precision" — every method except muon_polar gets
+there; the discriminating metric is how fast. "fail" for penalty_adam means its seed-42-tuned (lr, μ) did not reach
+1e-12 on seeds 43/44 (floors at ~5e-4 / 9e-4). Unaligned-init results are in §4.
+Full per-LR tables: <code>ortho_updates_results.json</code>.</p>
 
 <img class="plot" src="ortho_loss_curves.png" alt="Best-LR eval loss curves per method">
 
@@ -225,8 +227,8 @@ results are in §4. Full per-LR tables: <code>ortho_updates_results.json</code>.
         The four retractions are numerically interchangeable here; pick the cheapest.
         But plain SGD at lr=316 reaches 1e-12 in <b>221</b> steps without any manifold machinery.
         On a noiseless, realizable, well-conditioned task, the on-manifold gradient direction is nearly identical to
-        the raw gradient (the symmetric component the projection removes is small), so the projection buys exactness,
-        not speed. The honest conclusion: <b>on this task, generic manifold methods ≈ well-tuned SGD</b>.
+        the raw gradient (the symmetric component the projection removes is small), so the projection barely changes
+        the error trajectory. The honest conclusion: <b>on this task, generic manifold methods ≈ well-tuned SGD</b>.
     </p>
     <p>
         What the rotation-aware optimizers do buy is <b>learning-rate robustness</b>: so_adam, triv_adam, and the
@@ -251,24 +253,7 @@ results are in §4. Full per-LR tables: <code>ortho_updates_results.json</code>.
 </div>
 <img class="plot" src="ortho_det_obstruction.png" alt="Aligned vs unaligned init for det-preserving methods">
 
-<h3>Finding 4 — everyone recovers the teacher; only manifold methods recover it orthogonally</h3>
-<div class="finding">
-    <p>
-        Quotienting the exact model symmetries (gauge (W<sub>q</sub>R, W<sub>k</sub>R) and scale (cA, W<sub>v</sub>/c)),
-        <b>every converged method ends at distance ~8e-7 from the teacher</b> — including plain SGD and Adam.
-        The difference is <i>where</i> they end: manifold methods return weights with ‖W<sup>T</sup>W−I‖ ≈ 1e-13–1e-15,
-        while Adam's solution settles ~1.0 off the manifold (it absorbs the scale gauge, cA with c≈1.08, and
-        |c²−1|·√32 ≈ 1.0; its transient drift peaks at 4.5 around step 50) and SGD's ~0.08.
-        If the application needs the orthogonal factorization itself (e.g. for stability or interpretability),
-        manifold methods deliver it at no cost relative to the Adam baseline (and an 8–18% step cost relative to
-        the sharply-tuned SGD); if only the function matters, they buy nothing here.
-        (Naively measuring per-matrix distance without the scale gauge had suggested Adam "fails to recover the teacher"
-        at distance 0.59 — that was entirely a gauge artifact, caught during verification.)
-    </p>
-</div>
-<img class="plot" src="ortho_drift.png" alt="Orthogonality drift per method">
-
-<h3>Finding 5 — failure-mode catalog (all reproducible)</h3>
+<h3>Finding 4 — failure-mode catalog (all reproducible)</h3>
 <div class="finding warn">
     <ul>
         <li><b>Coupled landing fails at every lr.</b> The published form W ← W − lr·(descent + λ·pull) with λ=1
@@ -291,7 +276,7 @@ results are in §4. Full per-LR tables: <code>ortho_updates_results.json</code>.
     </ul>
 </div>
 
-<h3>Finding 6 — initial convergence: the first 100x is a different race</h3>
+<h3>Finding 5 — initial convergence: the first 100x is a different race</h3>
 <div class="finding">
     <p>
         The headline metric (steps to 1e-12) measures deep convergence into the noiseless optimum. If instead one
@@ -356,7 +341,7 @@ results are in §4. Full per-LR tables: <code>ortho_updates_results.json</code>.
 <table>
     <thead><tr><th>method</th><th class="num">steps to 1e-12 (unaligned)</th><th class="num">final loss</th><th>component crossing</th></tr></thead>
     <tbody>
-    <tr><td>sgd / adam</td><td class="num">265 / 342</td><td class="num">~9e-17</td><td>tunnels off-manifold</td></tr>
+    <tr><td>sgd / adam</td><td class="num">265 / 342</td><td class="num">~9e-17</td><td>tunnels between components</td></tr>
     <tr><td>penalty_adam / adam_decoupled_orth</td><td class="num">457 / 295</td><td class="num">~1e-16</td><td>tunnels (soft constraint)</td></tr>
     <tr><td>two_block_exact</td><td class="num">10 alternations</td><td class="num">8.6e-18</td><td>polar projection crosses dets</td></tr>
     <tr><td>exp_sgd, cayley, qr, polar, exp_momentum, so_adam, triv_adam, landing, procrustes_alt</td>
@@ -372,9 +357,9 @@ random seeds is 1/2 rather than the family's 3/4.</p>
 <pre><code>uv run ortho_updates.py --verify          # 8 pre-flight math checks (descent identity, negative control, ...)
 uv run ortho_updates.py --smoke           # 50-step smoke test of all methods
 uv run ortho_updates.py                   # full sweep (~25 min CPU): both arms, 3 seeds, plots + JSON
-uv run ortho_initial_convergence.py       # Finding 6: early-phase re-tuning sweep (~6 min; runs stop at the 100x crossing)</code></pre>
+uv run ortho_initial_convergence.py       # Finding 5: early-phase re-tuning sweep (~6 min; runs stop at the 100x crossing)</code></pre>
 <p class="muted">
-    Artifacts: <code>ortho_loss_curves.png</code>, <code>ortho_lr_robustness.png</code>, <code>ortho_drift.png</code>,
+    Artifacts: <code>ortho_loss_curves.png</code>, <code>ortho_lr_robustness.png</code>,
     <code>ortho_det_obstruction.png</code>, <code>ortho_updates_results.json</code> (per-LR tables and full curves),
     <code>ortho_initial_convergence.png</code>/<code>.json</code>.
     Methodology: every run shares the same teacher, init, eval set, and data stream; only the update rule and its
