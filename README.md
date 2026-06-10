@@ -60,3 +60,9 @@ uv run ortho_updates.py             # full comparison sweep
   inits floor at ~5e-4 error unless the init's det signs are matched to the teacher (one column flip)
 - Re-tuned for the first 100x error reduction, the ranking inverts: procrustes_alt crosses in 20 steps and
   decoupled Adam in 53, vs 78 for Adam and 138 for the manifold family
+- **Learning without Forgetting**
+  ([report](https://yaroslavvb.github.io/inverse-problems/reports/forgetting_report.html),
+  `uv run forgetting_lab.py`): reading Muon's spectral descent as worst-case forgetting control in a streaming
+  setting (2 sequences/round) — the spectral bound is real, but with random sources a 32-sequence replay buffer
+  beats every geometric constraint by 100x, and average-case (Frobenius/Fisher) anchors beat the worst-case
+  spectral family

@@ -352,7 +352,24 @@ Full per-LR tables: <code>ortho_updates_results.json</code>.</p>
 rotation steps preserve the det product, which is what this seed's unaligned init violates — its floor probability over
 random seeds is 1/2 rather than the family's 3/4.</p>
 
-<h2>5. Reproduce</h2>
+<h2>5. Learning without Forgetting</h2>
+<div class="card">
+    <p>
+        A companion study reads Muon's spectral-descent heuristic as <b>worst-case forgetting control</b> and tests it
+        in a streaming version of this task: only 2 sequences arrive per round, each fitted aggressively. For the
+        attention map, the spectral norms of the parameter updates bound the output change on <i>every possible
+        input</i> (‖Δout‖ ≤ ‖ΔA‖₂‖W<sub>v</sub>+ΔW<sub>v</sub>‖₂ + ‖A‖₂‖ΔW<sub>v</sub>‖₂), making
+        Muon the steepest descent per unit of worst-case forgetting budget — the attention analogue of
+        ‖(W+ΔW)x − Wx‖ ≤ ‖ΔW‖₂. Seven anti-forgetting techniques are compared against unconstrained fitting
+        (spectral and Frobenius trust regions, Muon steps, LwF-style distillation, Gauss-Newton EWC, replay,
+        null-space projection):
+        a 32-sequence replay buffer wins by two orders of magnitude, average-case (Frobenius/Fisher) anchors beat
+        the worst-case spectral family under random sources, and exact null-space protection saturates structurally.
+        <b><a href="forgetting_report.html">Full report: Learning without Forgetting →</a></b>
+    </p>
+</div>
+
+<h2>6. Reproduce</h2>
 <div class="card">
 <pre><code>uv run ortho_updates.py --verify          # 8 pre-flight math checks (descent identity, negative control, ...)
 uv run ortho_updates.py --smoke           # 50-step smoke test of all methods
@@ -369,7 +386,7 @@ uv run ortho_initial_convergence.py       # Finding 5: early-phase re-tuning swe
 </p>
 </div>
 
-<h2>6. References</h2>
+<h2>7. References</h2>
 <div class="card">
 <ul>
     <li>Ablin &amp; Peyré, <i>Fast and accurate optimization on the orthogonal manifold without retraction</i>, AISTATS 2022 — the landing method.</li>

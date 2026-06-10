@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Learning without Forgetting — Spectral Descent as Worst-Case Forgetting Control</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Plus+Jakarta+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: rgba(22, 30, 49, 0.7);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --text-color: #f3f4f6;
+            --text-muted: #9ca3af;
+            --accent-primary: #3b82f6;
+            --accent-success: #10b981;
+            --accent-warn: #f59e0b;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background-color: var(--bg-color);
+            background-image:
+                radial-gradient(at 10% 20%, rgba(59, 130, 246, 0.1) 0px, transparent 50%),
+                radial-gradient(at 90% 80%, rgba(16, 185, 129, 0.05) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: var(--text-color);
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            min-height: 100vh;
+            padding: 2rem;
+            line-height: 1.55;
+        }
+        .container { max-width: 1100px; margin: 0 auto; }
+        header { margin-bottom: 2.5rem; border-bottom: 1px solid var(--card-border); padding-bottom: 1.5rem; }
+        h1 { font-family: 'Outfit', sans-serif; font-size: 2.2rem; font-weight: 800; }
+        .subtitle { color: var(--text-muted); margin-top: 0.5rem; max-width: 65rem; }
+        h2 { font-family: 'Outfit', sans-serif; font-size: 1.5rem; font-weight: 600; margin: 2.5rem 0 1rem; color: var(--accent-primary); }
+        h3 { font-family: 'Outfit', sans-serif; font-size: 1.1rem; font-weight: 600; margin: 1.5rem 0 0.5rem; }
+        p { margin: 0.6rem 0; }
+        .muted { color: var(--text-muted); }
+        .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 1.25rem 1.5rem; margin: 1rem 0; }
+        .tldr-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin: 1rem 0; }
+        .tldr-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 1.1rem 1.25rem; }
+        .tldr-card .big { font-family: 'Outfit', sans-serif; font-size: 1.55rem; font-weight: 800; color: var(--accent-success); }
+        .tldr-card .label { color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem; }
+        table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.86rem; }
+        th, td { border: 1px solid var(--card-border); padding: 0.45rem 0.6rem; text-align: left; }
+        th { background: rgba(59, 130, 246, 0.12); font-weight: 600; }
+        tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+        td.num { text-align: right; font-variant-numeric: tabular-nums; }
+        code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85em;
+            background: rgba(255,255,255,0.06); border-radius: 4px; padding: 0.1em 0.35em; }
+        pre { background: rgba(0,0,0,0.45); border: 1px solid var(--card-border); border-radius: 8px;
+            padding: 1rem; overflow-x: auto; font-size: 0.82rem; margin: 0.75rem 0; }
+        pre code { background: none; padding: 0; }
+        img.plot { width: 100%; border-radius: 10px; border: 1px solid var(--card-border); margin: 0.75rem 0; background: #fff; }
+        .eq { background: rgba(0,0,0,0.3); border-left: 3px solid var(--accent-primary); border-radius: 6px;
+            padding: 0.75rem 1rem; margin: 0.75rem 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 0.9rem; overflow-x: auto; }
+        .finding { border-left: 3px solid var(--accent-primary); padding-left: 1rem; margin: 1.25rem 0; }
+        .finding.warn { border-left-color: var(--accent-warn); }
+        ul, ol { margin: 0.5rem 0 0.5rem 1.5rem; }
+        li { margin: 0.3rem 0; }
+        footer { margin-top: 3rem; border-top: 1px solid var(--card-border); padding-top: 1.25rem; color: var(--text-muted); font-size: 0.85rem; }
+        a { color: var(--accent-primary); }
+    </style>
+</head>
+<body>
+<div class="container">
+
+<header>
+    <h1>Learning without Forgetting</h1>
+    <p class="subtitle">
+        Muon's "spectral descent" heuristic, read as forgetting control: fit the batch in front of you while
+        limiting how much the function can change on <i>every possible input</i> — the worst-case source.
+        We make that analogy exact for single-layer linear attention, then prototype eight ways of avoiding
+        forgetting in a streaming student/teacher setting where only 2 sequences arrive per round, and study how
+        the strength of each technique trades off against overall error.
+        Lab: <code>forgetting_lab.py</code> (105 runs, 6.0&thinsp;s wall-clock in parallel; median run 0.23&thinsp;s).
+        Companion to the <a href="ortho_updates_report.html">orthogonality-exploiting updates report</a>.
+        The title nods to Li &amp; Hoiem's method of the same name, which appears here as <code>func_anchor</code>.
+    </p>
+</header>
+
+<div class="tldr-grid">
+    <div class="tldr-card">
+        <div class="big">‖Δout‖ ≲ ‖ΔA‖₂ + ‖ΔW<sub>v</sub>‖₂</div>
+        <div class="label">worst-case forgetting bound for linear attention (at orthogonal-scale params, any
+        orthonormal-row input). Spectral norms of the update bound what ANY source can lose — verified numerically.</div>
+    </div>
+    <div class="tldr-card">
+        <div class="big">memory &gt; geometry</div>
+        <div class="label">a 32-sequence replay buffer reaches 1.8e-5 — two orders of magnitude below every
+        geometric constraint (best trust-region method: 1.8e-3). Even an 8-sequence buffer (8.6e-4) beats them all.</div>
+    </div>
+    <div class="tldr-card">
+        <div class="big">average &gt; worst case</div>
+        <div class="label">Frobenius anchor (1.8e-3) and Fisher-weighted EWC (1.9e-3) beat the spectral family
+        (muon 4.0e-3, spectral clip 4.5e-3): with random sources, the forgetting that actually materializes is
+        the average case, not the worst case.</div>
+    </div>
+    <div class="tldr-card">
+        <div class="big">1.3e-1 vs 8.7e-3</div>
+        <div class="label">catastrophic forgetting is real here: unconstrained aggressive fitting (lr 0.1) drives each
+        batch to 2.3e-3 while overall error ends 15x WORSE than the initialization.</div>
+    </div>
+</div>
+
+<h2>1. The setting: tiny batches, aggressive fits</h2>
+<div class="card">
+    <p>
+        Same teacher as the <a href="ortho_updates_report.html">main report</a> (D=32, N=8, weights orthogonal),
+        but data now arrives as a stream: each of 40 rounds delivers <b>B=2 fresh sequences</b>, and the student
+        runs K=20 Adam steps on just that batch before the next one arrives. The student is parameterized by the
+        identifiable quantities <b>(A = W<sub>q</sub>W<sub>k</sub><sup>T</sup>, W<sub>v</sub>)</b> — the map
+        out<sub>n</sub> = Σ<sub>m≤n</sub> (x<sub>n</sub><sup>T</sup>A x<sub>m</sub>) x<sub>m</sub><sup>T</sup>W<sub>v</sub>
+        is bilinear in them.
+    </p>
+    <p>
+        A round provides B·N·D = 512 equations against 2D² = 2048 parameters: <b>every per-round fit is
+        underdetermined 4x</b>, so driving the batch loss down moves the function arbitrarily off-batch. That is
+        forgetting, and it is severe: naive fitting at lr 0.1 reaches 2.3e-3 on each batch while held-out error
+        climbs to 1.3e-1 — 15x worse than the random init (8.7e-3). Metrics per round: held-out eval MSE
+        (<b>overall error</b>, the headline), MSE on all previously seen batches (<b>forgetting</b>), and MSE on the
+        just-fitted batch (<b>fit</b>).
+    </p>
+</div>
+
+<h2>2. The analogy: spectral descent = worst-case forgetting control</h2>
+<div class="card">
+    <p>
+        Changing the weights by (ΔA, ΔW<sub>v</sub>) changes the output on an input sequence with orthonormal rows by
+    </p>
+    <div class="eq">‖Δout<sub>n</sub>‖₂ ≤ ‖ΔA‖₂·‖W<sub>v</sub>+ΔW<sub>v</sub>‖₂ + ‖A‖₂·‖ΔW<sub>v</sub>‖₂
+        &nbsp;&nbsp;<span class="muted">// for EVERY orthonormal-row input; no factor of N survives the causal sum,
+        because the rows' orthonormality bounds both the score vector and its recombination</span></div>
+    <p>
+        At orthogonal-scale parameters (‖A‖₂ ≈ ‖W<sub>v</sub>‖₂ ≈ 1) this is just
+        <b>‖Δout‖ ≲ ‖ΔA‖₂ + ‖ΔW<sub>v</sub>‖₂</b>: the spectral norms of the parameter changes bound the
+        function change on every possible source. This is the extension of the matmul intuition
+        (‖(W+ΔW)x − Wx‖ ≤ ‖ΔW‖₂ for ‖x‖≤1) to the bilinear attention map. <code>--verify</code> confirms it:
+        sup over 2000 random sequences 0.072 ≤ bound 0.124, never violated.
+    </p>
+    <p>
+        Frobenius norms play the complementary role: the <b>average</b> output change over random inputs is governed
+        by ‖Δ‖<sub>F</sub>, not ‖Δ‖₂. A rank-1 ΔA and an isotropic ΔA with the SAME Frobenius norm (0.1) produce
+        worst-case output changes of 0.100 vs 0.015 — a 6.5x gap tracking their spectral norms (0.10 vs 0.019, ~√D apart).
+        Equal average-case forgetting budgets can hide very different worst cases.
+    </p>
+    <p>This gives a clean two-column dictionary, and Muon sits in the right column:</p>
+    <table>
+        <thead><tr><th></th><th>average-case forgetting (random sources)</th><th>worst-case forgetting (every source)</th></tr></thead>
+        <tbody>
+        <tr><td>budget</td><td>‖Δθ‖<sub>F</sub> (Frobenius ball)</td><td>‖Δθ‖₂ (spectral ball)</td></tr>
+        <tr><td>steepest descent per unit budget</td><td>gradient descent (−G)</td><td><b>Muon: −msign(G)</b>, where msign(G) = argmax<sub>‖Δ‖₂≤1</sub>⟨G,Δ⟩</td></tr>
+        <tr><td>trust region / projection</td><td>frob_anchor (proximal ‖θ−θ₀‖²<sub>F</sub>)</td><td>spec_clip (clip singular values of the round update)</td></tr>
+        <tr><td>curvature-weighted refinement</td><td colspan="2">EWC: weight directions by how much PAST DATA actually cares (Fisher) — between the geometric budgets and memory</td></tr>
+        </tbody>
+    </table>
+    <p class="muted">
+        One subtlety, measured: msign of a small momentum still has unit spectral norm, so per-round Muon spends its
+        FULL worst-case budget K·η every round whether it needs it or not (the realized ‖Δ‖₂ saturates the bound
+        exactly) — it cannot converge, only orbit at a floor set by η. Same structural property as the muon_polar
+        floor in the main report.
+    </p>
+</div>
+
+<h2>3. Eight ways to not forget</h2>
+<table>
+    <thead><tr><th>method</th><th>per-round update (K=20 inner Adam steps unless noted)</th><th>family</th></tr></thead>
+    <tbody>
+    <tr><td>naive</td><td>unconstrained fit of the current batch (lr swept)</td><td>baseline</td></tr>
+    <tr><td>frob_anchor</td><td>+ λ‖θ − θ<sub>round start</sub>‖²<sub>F</sub></td><td>average-case trust region</td></tr>
+    <tr><td>spec_clip</td><td>unconstrained fit, then round delta projected onto {‖Δ‖₂ ≤ τ} per matrix</td><td>worst-case trust region</td></tr>
+    <tr><td>muon</td><td>θ ← θ − η·msign(momentum), K steps; total ‖Δ‖₂ ≤ K·η</td><td>worst-case steepest descent</td></tr>
+    <tr><td>func_anchor</td><td>+ λ‖f(X<sub>t</sub>; θ) − f(X<sub>t</sub>; θ<sub>round start</sub>)‖² (LwF-style self-distillation)</td><td>function-space trust region</td></tr>
+    <tr><td>ewc</td><td>+ λ·Σ F⊙(θ − anchor)², F = accumulated Gauss-Newton/Fisher diagonal</td><td>curvature-weighted anchor</td></tr>
+    <tr><td>replay</td><td>fit current batch + 8 sequences sampled from a reservoir buffer (cap swept)</td><td>memory</td></tr>
+    <tr><td>null_proj</td><td>per-step updates projected off the span of past-batch feature rows (GPM-style)</td><td>memory (subspace)</td></tr>
+    </tbody>
+</table>
+<p class="muted">
+    Implementation notes that mattered (caught by adversarial review before the final sweep): the textbook EWC
+    Fisher proxy — squared batch-mean gradient of an already-fitted batch — is residual-scale, ~6 orders of
+    magnitude below the Gauss-Newton diagonal here, and made the penalty inert; the GN diagonal (free, since the
+    model is linear per block) Pareto-dominates it. And msign needs rank-aware null-space handling: batch gradients
+    have rank ≤ B·N = 16 of 32, and a polar map with an absolute eigenvalue clamp turns the null space into
+    unit-norm noise — that variant diverged at every step size.
+</p>
+
+<h2>4. Results</h2>
+<table>
+    <thead><tr><th>method</th><th>best knob</th><th class="num">final eval MSE</th>
+        <th class="num">forgetting (past MSE, last 10 rounds)</th><th class="num">fit (mean batch MSE)</th></tr></thead>
+    <tbody>
+    <tr><td><b>replay</b></td><td>cap 32</td><td class="num"><b>1.8e-5</b></td><td class="num">1.9e-5</td><td class="num">4.5e-4</td></tr>
+    <tr><td><b>frob_anchor</b></td><td>λ 0.1</td><td class="num">1.8e-3</td><td class="num">1.7e-3</td><td class="num">4.1e-4</td></tr>
+    <tr><td><b>ewc</b> (GN Fisher)</td><td>λ 0.03</td><td class="num">1.9e-3</td><td class="num">1.6e-3</td><td class="num">5.1e-4</td></tr>
+    <tr><td>muon</td><td>η 0.01</td><td class="num">4.0e-3</td><td class="num">3.6e-3</td><td class="num">3.4e-3</td></tr>
+    <tr><td>naive</td><td>lr 0.003</td><td class="num">4.4e-3</td><td class="num">4.0e-3</td><td class="num">1.9e-3</td></tr>
+    <tr><td>spec_clip</td><td>τ 0.3</td><td class="num">4.5e-3</td><td class="num">4.0e-3</td><td class="num">3.0e-3</td></tr>
+    <tr><td>func_anchor</td><td>λ 1</td><td class="num">4.6e-3</td><td class="num">4.0e-3</td><td class="num">2.2e-3</td></tr>
+    <tr><td>null_proj</td><td>tol 0.03</td><td class="num">1.1e-2</td><td class="num">7.6e-3</td><td class="num">7.3e-3</td></tr>
+    </tbody>
+</table>
+<p class="muted">Geometric mean over 3 seeds; identical inits, data streams, and eval set across all methods and
+knob values; init eval loss 8.7e-3. Full per-config tables: <code>forgetting_results.json</code>.</p>
+
+<img class="plot" src="forgetting_eval_curves.png" alt="Overall error over rounds per method">
+<img class="plot" src="forgetting_dynamics.png" alt="Forgetting and fit dynamics">
+
+<h3>Finding 1 — memory beats geometry, by two orders of magnitude</h3>
+<div class="finding">
+    <p>
+        Every geometric constraint — spectral or Frobenius, parameter- or function-space — at best improves on
+        tuned naive fitting ~2.5x (4.4e-3 → 1.8e-3). A <b>32-sequence replay buffer reaches 1.8e-5</b>,
+        and takes off around round 10, once the buffer accumulates enough sequences to make the joint system
+        identifiable — from then on each round refines a well-posed problem instead of sliding around an
+        underdetermined one. Even a tiny 8-sequence buffer (8.6e-4) beats every non-memory method, and cap 32
+        matches keep-everything (2.2e-5). Constraints can only LIMIT the damage of an underdetermined fit;
+        memory makes the fit well-posed. The trade-off scatter shows this as replay breaking off the frontier:
+        it fits hard AND forgets least.
+    </p>
+</div>
+<img class="plot" src="forgetting_tradeoff.png" alt="Fit vs forget trade-off across all configs">
+
+<h3>Finding 2 — with random sources, average-case beats worst-case protection</h3>
+<div class="finding">
+    <p>
+        The spectral family does work as advertised — the bound is real and the runs never violate it — but on
+        overall error muon (4.0e-3) and spec_clip (4.5e-3) only match tuned naive (4.4e-3), while the
+        average-case Frobenius anchor (1.8e-3) and the Fisher-weighted EWC (1.9e-3) clearly win.
+        The reason is the gap the rank-1 demo quantifies: worst-case protection spends its budget guarding
+        against sources that almost never arrive. The forgetting that actually materializes on stored past
+        batches is an <i>average</i> over random orthonormal-row inputs, governed by Frobenius geometry. EWC —
+        conceptually a step from geometry toward memory, since the Fisher weights directions by how much past data
+        actually cares — ties the plain Frobenius anchor here (per-seed finals fully overlap) rather than beating
+        it: with isotropically random sources the data-weighted metric is itself nearly isotropic, so there is
+        little for the weighting to exploit. Muon's "fit the batch per unit of worst-case forgetting" heuristic is
+        the right <i>shape</i> of idea but guards the wrong norm for this source distribution.
+    </p>
+</div>
+
+<h3>Finding 3 — every knob is a fit-vs-forget dial, and the optimum is interior</h3>
+<div class="finding">
+    <p>
+        Sweeping each method's strength traces a U: too weak reverts to naive forgetting (or worse — naive at lr 0.1
+        is the catastrophic end), too strong stops learning (spec_clip at τ=0.003 barely moves from init, 8.4e-3).
+        Best settings sit at intermediate strength: τ=0.3 for spectral clipping (per-round worst-case output budget
+        ≈ 0.6 against typical teacher output norms of ~0.3 — the budget that wins is about 2x the signal),
+        Muon budget K·η = 0.2/round, λ=0.1 for the Frobenius anchor, λ=0.03 for EWC. The one exception is
+        null_proj, whose knob is essentially inert — see Finding 4.
+    </p>
+</div>
+<img class="plot" src="forgetting_strength.png" alt="Strength of each knob vs overall error">
+
+<h3>Finding 4 — exact null-space protection does not stream (a negative result)</h3>
+<div class="finding warn">
+    <p>
+        null_proj (GPM-style) projects every update off the feature directions of past batches — exact,
+        verified-to-1e-15 protection per block. It is also the <b>worst method in the study</b> (1.1e-2, above the
+        init loss). The failure is structural, not a tuning problem: each round contributes 16 fresh constraint
+        directions to W<sub>v</sub>'s 32-dim space and 72 to A's 1024-dim space, so the protected subspace
+        saturates by round ~3 (W<sub>v</sub>) and ~14 (A). After that the method must either freeze (no capacity
+        left to both protect and learn) or silently drop constraints — and its knob barely changes anything
+        (1.05–1.12e-2 across the grid). Exact subspace protection is a fixed-capacity budget; a stream spends it
+        in a few rounds. Soft, energy-weighted protection (EWC) or raw memory (replay) degrade gracefully instead.
+    </p>
+</div>
+
+<h3>Finding 5 — what this says about the spectral-descent heuristic</h3>
+<div class="finding">
+    <p>
+        The forgetting reading of Muon survives contact with the experiment in its logic but not in its norm:
+        spectral control is exactly the right quantity to bound <i>worst-case</i> interference, and if sources were
+        adversarial — or the data distribution shifted so that "rare" directions mattered — the spectral family is
+        the only one with a guarantee. For i.i.d. random sources, though, guarding the worst case is ~√D too
+        conservative per unit of learning, and the methods that model where past knowledge actually lives
+        (Fisher weighting, replay) dominate. A practical reading for larger models: Muon-style updates are a
+        forgetting-robustness prior you get for free from the optimizer, but they are not a substitute for memory
+        when data is scarce and non-repeating.
+    </p>
+</div>
+
+<h2>5. Protocol, parallelism, runtime</h2>
+<div class="card">
+    <ul>
+        <li>105 runs (8 methods × 3–6 knob values × 3 seeds), float64; every run sees the same teacher
+            (<code>make_problem(42)</code>), the same per-seed init and data stream, and the same held-out eval set
+            (128 sequences). Selection by geometric-mean final eval over seeds.</li>
+        <li><b>Wall-clock: 6.0&thinsp;s for the whole sweep</b> on 16 parallel workers
+            (<code>ProcessPoolExecutor</code>, one torch thread per worker). Median run 0.23&thinsp;s, warm maximum
+            0.65&thinsp;s — every individual run within the &lt;1&thinsp;s budget (the absolute max of 3.0&thinsp;s
+            is first-task-per-worker torch warmup, not run cost).</li>
+        <li><code>--verify</code> checks before any sweep: forward equivalence of the (A, W<sub>v</sub>)
+            parameterization (2e-16), the spectral bound on 2000 random sequences, the rank-1 vs isotropic
+            worst-case gap (with an aligned input that attains the sup), null-space projector exactness (1e-15),
+            and the underdetermination count.</li>
+    </ul>
+</div>
+
+<h2>6. Limitations</h2>
+<div class="card">
+    <ul>
+        <li>Constrained methods share a fixed inner optimizer (Adam, lr 0.01, K=20) while their strength knob is
+            swept; review-tested at lr 0.003 — orderings unchanged — but a full joint sweep could shift magnitudes.</li>
+        <li>Sources are i.i.d. uniform (Haar) — the regime most favorable to average-case methods. An adversarial or
+            shifting source distribution would re-weight Findings 2 and 5 toward the spectral family; untested here.</li>
+        <li>Hybrids are untested (spectral clip + small replay buffer; EWC + replay); the dictionary in §2 suggests
+            they are complementary budgets rather than alternatives.</li>
+        <li>Per-round Muon resets momentum each round to keep the K·η budget clean; streaming Muon with persistent
+            momentum would couple rounds and is a different method.</li>
+        <li>The forgetting metric averages the last 10 rounds because the all-round mean is dominated by the early
+            not-yet-learned transient (it compresses method differences by up to ~19x for replay; rankings are
+            preserved up to within-noise ties).</li>
+    </ul>
+</div>
+
+<h2>7. Reproduce</h2>
+<div class="card">
+<pre><code>uv run forgetting_lab.py --verify   # bound + projector + parameterization checks
+uv run forgetting_lab.py --smoke    # one run per method, serial
+uv run forgetting_lab.py            # full 105-run sweep, parallel (~6 s on 16 cores)</code></pre>
+<p class="muted">
+    Artifacts: <code>forgetting_eval_curves.png</code>, <code>forgetting_dynamics.png</code>,
+    <code>forgetting_strength.png</code>, <code>forgetting_tradeoff.png</code>,
+    <code>forgetting_results.json</code> (all per-config curves and summaries).
+</p>
+</div>
+
+<h2>8. References</h2>
+<div class="card">
+<ul>
+    <li>Jordan et al., <i>Muon</i>, 2024; Bernstein &amp; Newhouse, <i>Old Optimizer, New Norm</i>, 2024 — msign as steepest descent in spectral norm.</li>
+    <li>Li &amp; Hoiem, <i>Learning without Forgetting</i>, ECCV 2016 — distillation against the old model (func_anchor).</li>
+    <li>Kirkpatrick et al., <i>Overcoming catastrophic forgetting in neural networks</i>, PNAS 2017 — EWC; Schwarz et al. 2018 — online EWC.</li>
+    <li>Saha, Garg, Roy, <i>Gradient Projection Memory for Continual Learning</i>, ICLR 2021 — null-space projection (null_proj).</li>
+    <li>Chaudhry et al., <i>On Tiny Episodic Memories in Continual Learning</i>, 2019 — small replay buffers dominating regularization methods, consistent with Finding 1.</li>
+</ul>
+</div>
+
+<footer>
+    Experiment 10jun26 · <code>forgetting_lab.py</code> · single-layer linear attention, D=32, float64, streaming
+    B=2/round · companion to the <a href="ortho_updates_report.html">orthogonality-exploiting updates report</a>
+    and the <a href="two_block_report.html">two-block solver report</a>.
+</footer>
+
+</div>
+</body>
+</html>
