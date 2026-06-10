@@ -74,10 +74,12 @@
     <p class="subtitle">
         Muon's "spectral descent" heuristic, read as forgetting control: fit the batch in front of you while
         limiting how much the function can change on <i>every possible input</i> — the worst-case source.
-        We make that analogy exact for single-layer linear attention, then prototype eight ways of avoiding
-        forgetting in a streaming student/teacher setting where only 2 sequences arrive per round, and study how
-        the strength of each technique trades off against overall error.
-        Lab: <code>forgetting_lab.py</code> (105 runs, 6.0&thinsp;s wall-clock in parallel; median run 0.23&thinsp;s).
+        We make that analogy exact for single-layer linear attention, then prototype ten ways of avoiding
+        forgetting in a streaming student/teacher setting where only 2 sequences arrive per round — including
+        Tilde Research's <a href="https://github.com/tilde-research/comp-muon-release">compositional Muon</a>,
+        which extends the per-matrix budget to the whole layer's composition — and study how the strength of
+        each technique trades off against overall error.
+        Lab: <code>forgetting_lab.py</code> (135 runs, 5.9&thinsp;s wall-clock in parallel; median run 0.23&thinsp;s).
         Companion to the <a href="ortho_updates_report.html">orthogonality-exploiting updates report</a>.
         The title nods to Li &amp; Hoiem's method of the same name, which appears here as <code>func_anchor</code>.
     </p>
@@ -156,6 +158,11 @@
         <tr><td>steepest descent per unit budget</td><td>gradient descent (−G)</td><td><b>Muon: −msign(G)</b>, where msign(G) = argmax<sub>‖Δ‖₂≤1</sub>⟨G,Δ⟩</td></tr>
         <tr><td>trust region / projection</td><td>frob_anchor (proximal ‖θ−θ₀‖²<sub>F</sub>)</td><td>spec_clip (clip singular values of the round update)</td></tr>
         <tr><td>curvature-weighted refinement</td><td colspan="2">EWC: weight directions by how much PAST DATA actually cares (Fisher) — between the geometric budgets and memory</td></tr>
+        <tr><td>compositional extension</td><td colspan="2"><b>Compositional Muon</b> (Tilde Research): when the layer is only accessible through its
+            factors (W<sub>q</sub>, W<sub>k</sub>), per-matrix spectral budgets charge the wrong quantity — the forgetting
+            bound charges ‖Δ(W<sub>q</sub>W<sub>k</sub><sup>T</sup>)‖₂, the COMPOSED change. Partner-whitening
+            (msign(G·C<sup>−1</sup>)·C<sup>−1</sup> with C the partner's damped Gram root) bounds the per-step composed
+            change by η, nearly tightly — whole-layer worst-case forgetting control from factor access alone (Finding 3).</td></tr>
         </tbody>
     </table>
     <p class="muted">
@@ -166,14 +173,19 @@
     </p>
 </div>
 
-<h2>3. Eight ways to not forget</h2>
+<h2>3. Ten ways to not forget</h2>
 <table>
     <thead><tr><th>method</th><th>per-round update (K=20 inner Adam steps unless noted)</th><th>family</th></tr></thead>
     <tbody>
     <tr><td>naive</td><td>unconstrained fit of the current batch (lr swept)</td><td>baseline</td></tr>
     <tr><td>frob_anchor</td><td>+ λ‖θ − θ<sub>round start</sub>‖²<sub>F</sub></td><td>average-case trust region</td></tr>
     <tr><td>spec_clip</td><td>unconstrained fit, then round delta projected onto {‖Δ‖₂ ≤ τ} per matrix</td><td>worst-case trust region</td></tr>
-    <tr><td>muon</td><td>θ ← θ − η·msign(momentum), K steps; total ‖Δ‖₂ ≤ K·η</td><td>worst-case steepest descent</td></tr>
+    <tr><td>muon</td><td>θ ← θ − η·msign(momentum), K steps; total ‖Δ‖₂ ≤ K·η (applied to A directly)</td><td>worst-case steepest descent</td></tr>
+    <tr><td>comp_muon</td><td>Tilde's compositional Muon on the factored pair (W<sub>q</sub>, W<sub>k</sub>):
+        ΔW<sub>q</sub> = −(η/2)·msign(M<sub>q</sub>C<sub>k</sub><sup>−1</sup>)C<sub>k</sub><sup>−1</sup>,
+        C<sub>k</sub> = (W<sub>k</sub><sup>T</sup>W<sub>k</sub> + λI)<sup>1/2</sup> (and symmetrically for W<sub>k</sub>);
+        bounds the COMPOSED ‖Δ(W<sub>q</sub>W<sub>k</sub><sup>T</sup>)‖₂ ≤ η per step</td><td>worst-case, whole layer jointly</td></tr>
+    <tr><td>factored_muon</td><td>naive per-factor msign on (W<sub>q</sub>, W<sub>k</sub>) with the same η/2 budgets — the ablation that ignores composition</td><td>worst-case, per factor</td></tr>
     <tr><td>func_anchor</td><td>+ λ‖f(X<sub>t</sub>; θ) − f(X<sub>t</sub>; θ<sub>round start</sub>)‖² (LwF-style self-distillation)</td><td>function-space trust region</td></tr>
     <tr><td>ewc</td><td>+ λ·Σ F⊙(θ − anchor)², F = accumulated Gauss-Newton/Fisher diagonal</td><td>curvature-weighted anchor</td></tr>
     <tr><td>replay</td><td>fit current batch + 8 sequences sampled from a reservoir buffer (cap swept)</td><td>memory</td></tr>
@@ -186,7 +198,9 @@
     magnitude below the Gauss-Newton diagonal here, and made the penalty inert; the GN diagonal (free, since the
     model is linear per block) Pareto-dominates it. And msign needs rank-aware null-space handling: batch gradients
     have rank ≤ B·N = 16 of 32, and a polar map with an absolute eigenvalue clamp turns the null space into
-    unit-norm noise — that variant diverged at every step size.
+    unit-norm noise — that variant diverged at every step size. The two factored Muons start from a deliberately
+    unbalanced factorization (W<sub>q</sub> = A₀D<sup>−1</sup>, W<sub>k</sub> = D, condition 10 — function-identical
+    to every other method's init), with Gram damping λ = 1e-2 per Tilde's default.
 </p>
 
 <h2>4. Results</h2>
@@ -197,7 +211,9 @@
     <tr><td><b>replay</b></td><td>cap 32</td><td class="num"><b>1.8e-5</b></td><td class="num">1.9e-5</td><td class="num">4.5e-4</td></tr>
     <tr><td><b>frob_anchor</b></td><td>λ 0.1</td><td class="num">1.8e-3</td><td class="num">1.7e-3</td><td class="num">4.1e-4</td></tr>
     <tr><td><b>ewc</b> (GN Fisher)</td><td>λ 0.03</td><td class="num">1.9e-3</td><td class="num">1.6e-3</td><td class="num">5.1e-4</td></tr>
+    <tr><td><b>comp_muon</b> (Tilde)</td><td>η 0.03</td><td class="num">3.8e-3</td><td class="num">3.6e-3</td><td class="num">1.1e-3</td></tr>
     <tr><td>muon</td><td>η 0.01</td><td class="num">4.0e-3</td><td class="num">3.6e-3</td><td class="num">3.4e-3</td></tr>
+    <tr><td>factored_muon</td><td>η 0.01</td><td class="num">4.3e-3</td><td class="num">3.8e-3</td><td class="num">3.2e-3</td></tr>
     <tr><td>naive</td><td>lr 0.003</td><td class="num">4.4e-3</td><td class="num">4.0e-3</td><td class="num">1.9e-3</td></tr>
     <tr><td>spec_clip</td><td>τ 0.3</td><td class="num">4.5e-3</td><td class="num">4.0e-3</td><td class="num">3.0e-3</td></tr>
     <tr><td>func_anchor</td><td>λ 1</td><td class="num">4.6e-3</td><td class="num">4.0e-3</td><td class="num">2.2e-3</td></tr>
@@ -242,7 +258,48 @@ knob values; init eval loss 8.7e-3. Full per-config tables: <code>forgetting_res
     </p>
 </div>
 
-<h3>Finding 3 — every knob is a fit-vs-forget dial, and the optimum is interior</h3>
+<h3>Finding 3 — compositional Muon: the layer's budget, not the matrices'</h3>
+<div class="finding">
+    <p>
+        Tilde Research's <a href="https://github.com/tilde-research/comp-muon-release">compositional Muon</a>
+        extends the forgetting reading from one matrix to the whole layer. In a transformer you don't get to
+        update A = W<sub>q</sub>W<sub>k</sub><sup>T</sup> directly — you update the factors, and the layer's
+        forgetting bound charges the <i>composed</i> change ‖ΔA‖₂, not the factor changes. Their
+        partner-whitened half-split rule (ΔW<sub>q</sub> = −(η/2)·msign(G<sub>q</sub>C<sub>k</sub><sup>−1</sup>)C<sub>k</sub><sup>−1</sup>
+        with C<sub>k</sub> the partner's damped Gram root) is exactly steepest descent under a spectral budget on
+        the composed update, split half per factor. We test it from a deliberately <b>unbalanced factorization</b>
+        (W<sub>q</sub> = A₀D<sup>−1</sup>, W<sub>k</sub> = D, condition 10 — same function as every other init;
+        trained transformers have unbalanced factor spectra, which is the regime the method targets):
+    </p>
+    <ul>
+        <li><b>The whitening makes the composed budget exact</b>: one round at η=0.01 realizes
+            ‖Δ(W<sub>q</sub>W<sub>k</sub><sup>T</sup>)‖₂ = 0.199 against the K·η = 0.200 budget; naive per-factor
+            msign with the same per-factor budgets realizes <b>0.470 — 2.4x over budget</b>, because each factor's
+            unit-spectral-norm step gets amplified by the partner's largest singular values
+            (<code>--verify</code> check 6).</li>
+        <li><b>Factor access costs nothing once whitened</b>: comp_muon matches direct muon-on-A at matched η
+            (4.00e-3 vs 4.01e-3 at η=0.01, per-seed identical to ~1%) — partner whitening fully recovers
+            white-box composition control from the factors.</li>
+        <li><b>Naive factored Muon is dominated at matched step sizes near the optimum</b>: at η=0.01 it spends
+            2.4x the worst-case forgetting budget and still ends with worse error on every seed (4.31e-3 vs
+            4.00e-3; same at η=0.03) — the over-budget rotation is spent in directions the partner's spectrum
+            amplifies, not directions that fit the batch. (At very small or very large η, where the budget either
+            doesn't bind or everything overshoots, the two variants trade places.)</li>
+        <li><b>comp_muon edges out every other spectral-family member</b> (3.82e-3 at η=0.03, winning the paired
+            comparison against muon-on-A on all 3 shared-stream seeds, though the margin is within seed-noise
+            range). It also degrades more gracefully than muon-on-A at an oversized step (η=0.1: 8.9e-3 vs
+            2.2e-2) — though the ablation shows that particular robustness comes from the factored
+            parameterization itself (naive factored is even more robust there, 6.8e-3), not from charging the
+            correct norm.</li>
+    </ul>
+    <p class="muted">
+        It does not change the macro conclusion — comp_muon still guards the worst case, so frob/EWC/replay still
+        beat it under random sources (Finding 2) — but within the spectral family it is the right way to spend the
+        budget: jointly, on the composition the function actually sees.
+    </p>
+</div>
+
+<h3>Finding 4 — every knob is a fit-vs-forget dial, and the optimum is interior</h3>
 <div class="finding">
     <p>
         Sweeping each method's strength traces a U: too weak reverts to naive forgetting (or worse — naive at lr 0.1
@@ -250,12 +307,12 @@ knob values; init eval loss 8.7e-3. Full per-config tables: <code>forgetting_res
         Best settings sit at intermediate strength: τ=0.3 for spectral clipping (per-round worst-case output budget
         ≈ 0.6 against typical teacher output norms of ~0.3 — the budget that wins is about 2x the signal),
         Muon budget K·η = 0.2/round, λ=0.1 for the Frobenius anchor, λ=0.03 for EWC. The one exception is
-        null_proj, whose knob is essentially inert — see Finding 4.
+        null_proj, whose knob is essentially inert — see Finding 5.
     </p>
 </div>
 <img class="plot" src="forgetting_strength.png" alt="Strength of each knob vs overall error">
 
-<h3>Finding 4 — exact null-space protection does not stream (a negative result)</h3>
+<h3>Finding 5 — exact null-space protection does not stream (a negative result)</h3>
 <div class="finding warn">
     <p>
         null_proj (GPM-style) projects every update off the feature directions of past batches — exact,
@@ -269,7 +326,7 @@ knob values; init eval loss 8.7e-3. Full per-config tables: <code>forgetting_res
     </p>
 </div>
 
-<h3>Finding 5 — what this says about the spectral-descent heuristic</h3>
+<h3>Finding 6 — what this says about the spectral-descent heuristic</h3>
 <div class="finding">
     <p>
         The forgetting reading of Muon survives contact with the experiment in its logic but not in its norm:
@@ -278,25 +335,27 @@ knob values; init eval loss 8.7e-3. Full per-config tables: <code>forgetting_res
         the only one with a guarantee. For i.i.d. random sources, though, guarding the worst case is ~√D too
         conservative per unit of learning, and the methods that model where past knowledge actually lives
         (Fisher weighting, replay) dominate. A practical reading for larger models: Muon-style updates are a
-        forgetting-robustness prior you get for free from the optimizer, but they are not a substitute for memory
-        when data is scarce and non-repeating.
+        forgetting-robustness prior you get for free from the optimizer — and compositional Muon (Finding 3) is
+        how to spend that prior on the quantity a layer actually exposes to the loss — but they are not a
+        substitute for memory when data is scarce and non-repeating.
     </p>
 </div>
 
 <h2>5. Protocol, parallelism, runtime</h2>
 <div class="card">
     <ul>
-        <li>105 runs (8 methods × 3–6 knob values × 3 seeds), float64; every run sees the same teacher
+        <li>135 runs (10 methods × 3–6 knob values × 3 seeds), float64; every run sees the same teacher
             (<code>make_problem(42)</code>), the same per-seed init and data stream, and the same held-out eval set
             (128 sequences). Selection by geometric-mean final eval over seeds.</li>
-        <li><b>Wall-clock: 6.0&thinsp;s for the whole sweep</b> on 16 parallel workers
+        <li><b>Wall-clock: 5.9&thinsp;s for the whole sweep</b> on 16 parallel workers
             (<code>ProcessPoolExecutor</code>, one torch thread per worker). Median run 0.23&thinsp;s, warm maximum
-            0.65&thinsp;s — every individual run within the &lt;1&thinsp;s budget (the absolute max of 3.0&thinsp;s
+            0.62&thinsp;s — every individual run within the &lt;1&thinsp;s budget (the absolute max of ~2–3&thinsp;s
             is first-task-per-worker torch warmup, not run cost).</li>
         <li><code>--verify</code> checks before any sweep: forward equivalence of the (A, W<sub>v</sub>)
             parameterization (2e-16), the spectral bound on 2000 random sequences, the rank-1 vs isotropic
             worst-case gap (with an aligned input that attains the sup), null-space projector exactness (1e-15),
-            and the underdetermination count.</li>
+            the underdetermination count, and the composed-budget check for the factored Muons
+            (comp_muon realizes 0.199 of a 0.200 budget; naive factored realizes 0.470).</li>
     </ul>
 </div>
 
@@ -319,9 +378,9 @@ knob values; init eval loss 8.7e-3. Full per-config tables: <code>forgetting_res
 
 <h2>7. Reproduce</h2>
 <div class="card">
-<pre><code>uv run forgetting_lab.py --verify   # bound + projector + parameterization checks
+<pre><code>uv run forgetting_lab.py --verify   # bound + projector + parameterization + composed-budget checks
 uv run forgetting_lab.py --smoke    # one run per method, serial
-uv run forgetting_lab.py            # full 105-run sweep, parallel (~6 s on 16 cores)</code></pre>
+uv run forgetting_lab.py            # full 135-run sweep, parallel (~6 s on 16 cores)</code></pre>
 <p class="muted">
     Artifacts: <code>forgetting_eval_curves.png</code>, <code>forgetting_dynamics.png</code>,
     <code>forgetting_strength.png</code>, <code>forgetting_tradeoff.png</code>,
@@ -333,6 +392,8 @@ uv run forgetting_lab.py            # full 105-run sweep, parallel (~6 s on 16 c
 <div class="card">
 <ul>
     <li>Jordan et al., <i>Muon</i>, 2024; Bernstein &amp; Newhouse, <i>Old Optimizer, New Norm</i>, 2024 — msign as steepest descent in spectral norm.</li>
+    <li>Tilde Research, <i>Compositional Muon</i> (<a href="https://github.com/tilde-research/comp-muon-release">comp-muon-release</a>) —
+        partner-whitened half-split updates constraining the composed QK/OV products (comp_muon; λ damping 1e-2 per their default).</li>
     <li>Li &amp; Hoiem, <i>Learning without Forgetting</i>, ECCV 2016 — distillation against the old model (func_anchor).</li>
     <li>Kirkpatrick et al., <i>Overcoming catastrophic forgetting in neural networks</i>, PNAS 2017 — EWC; Schwarz et al. 2018 — online EWC.</li>
     <li>Saha, Garg, Roy, <i>Gradient Projection Memory for Continual Learning</i>, ICLR 2021 — null-space projection (null_proj).</li>

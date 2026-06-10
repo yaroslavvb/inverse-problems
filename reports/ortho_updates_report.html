@@ -360,9 +360,9 @@ random seeds is 1/2 rather than the family's 3/4.</p>
         attention map, the spectral norms of the parameter updates bound the output change on <i>every possible
         input</i> (‖Δout‖ ≤ ‖ΔA‖₂‖W<sub>v</sub>+ΔW<sub>v</sub>‖₂ + ‖A‖₂‖ΔW<sub>v</sub>‖₂), making
         Muon the steepest descent per unit of worst-case forgetting budget — the attention analogue of
-        ‖(W+ΔW)x − Wx‖ ≤ ‖ΔW‖₂. Seven anti-forgetting techniques are compared against unconstrained fitting
-        (spectral and Frobenius trust regions, Muon steps, LwF-style distillation, Gauss-Newton EWC, replay,
-        null-space projection):
+        ‖(W+ΔW)x − Wx‖ ≤ ‖ΔW‖₂. Nine anti-forgetting techniques are compared against unconstrained fitting
+        (spectral and Frobenius trust regions, Muon steps, Tilde's compositional Muon on the factored QK pair
+        with its naive-factored ablation, LwF-style distillation, Gauss-Newton EWC, replay, null-space projection):
         a 32-sequence replay buffer wins by two orders of magnitude, average-case (Frobenius/Fisher) anchors beat
         the worst-case spectral family under random sources, and exact null-space protection saturates structurally.
         <b><a href="forgetting_report.html">Full report: Learning without Forgetting →</a></b>

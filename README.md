@@ -65,4 +65,6 @@ uv run ortho_updates.py             # full comparison sweep
   `uv run forgetting_lab.py`): reading Muon's spectral descent as worst-case forgetting control in a streaming
   setting (2 sequences/round) — the spectral bound is real, but with random sources a 32-sequence replay buffer
   beats every geometric constraint by 100x, and average-case (Frobenius/Fisher) anchors beat the worst-case
+  spectral family; Tilde's compositional Muon keeps the layer's composed forgetting budget from factor access
+  (realizing 0.199 of a 0.200 budget vs 2.4x overshoot for naive per-factor Muon) and edges out the rest of the
   spectral family

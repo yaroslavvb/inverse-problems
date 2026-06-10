@@ -105,6 +105,20 @@ def msign_safe(Z, rel_eps=1e-12):
     return Z @ (Q * inv) @ Q.T
 
 
+def eigh_inv_sqrt(S):
+    """(S)^(-1/2) for symmetric positive-definite S (Gram + damping)."""
+    w, Q = torch.linalg.eigh(S)
+    return Q @ torch.diag(w.clamp_min(1e-12).rsqrt()) @ Q.T
+
+
+# Anisotropic gauge for the factored (W_q, W_k) student: W_q0 = A0 D^-1,
+# W_k0 = D gives the SAME function as the (A, W_v) init (W_q0 W_k0^T = A0)
+# but condition-10 unbalanced factor spectra — the regime compositional Muon
+# targets (trained transformers have unbalanced QK factor spectra).
+ANISO = torch.logspace(-0.5, 0.5, DIM)
+CM_DAMPING = 1e-2   # lambda in C = (W^T W + lambda I)^(1/2), Tilde's default
+
+
 # ---------------------------------------------------------------- per-round methods
 # Each takes (state, Xb, Yb, mem, hyper); state = {'A','Wv'} leaf tensors.
 
@@ -167,6 +181,59 @@ def round_muon(state, Xb, Yb, mem, hyper):
             M["Wv"] = 0.9 * M["Wv"] + gW
             state["A"].sub_(eta * msign_safe(M["A"]))
             state["Wv"].sub_(eta * msign_safe(M["Wv"]))
+
+
+def _factored_init(state, mem):
+    """Lazily split state's A into unbalanced factors (same function, cond-10 spectra)."""
+    if "Wq" not in mem:
+        with torch.no_grad():
+            mem["Wq"] = (state["A"].detach() @ torch.diag(1.0 / ANISO)).requires_grad_(True)
+            mem["Wk"] = torch.diag(ANISO).clone().requires_grad_(True)
+    return mem["Wq"], mem["Wk"]
+
+
+def _factored_round(state, Xb, Yb, mem, eta, compositional):
+    """Shared loop for the two factored Muons. Per inner step the QK pair gets a
+    combined update; W_v gets a plain msign step of spectral norm eta.
+
+    compositional=True (Tilde's partner-whitened half-split rule):
+        dWq = -(eta/2) msign(Mq C_k^-1) C_k^-1,  C_k = (W_k^T W_k + lam I)^(1/2)
+        dWk = -(eta/2) msign(Mk C_q^-1) C_q^-1,  C_q symmetric
+    which bounds the COMPOSED update ||d(W_q W_k^T)||_2 <= eta to first order —
+    the quantity the layer's forgetting bound actually charges.
+    compositional=False: naive per-factor msign with the same eta/2 budgets,
+    which bounds the factors but lets the composed change blow up with the
+    partner's spectral norm when factors are unbalanced."""
+    Wq, Wk = _factored_init(state, mem)
+    Wv = state["Wv"]
+    I = torch.eye(DIM)
+    M = {k: torch.zeros(DIM, DIM) for k in ("q", "k", "v")}
+    for _ in range(INNER_STEPS):
+        loss = mse(forward(Xb, Wq @ Wk.T, Wv), Yb)
+        gq, gk, gv = torch.autograd.grad(loss, [Wq, Wk, Wv])
+        with torch.no_grad():
+            M["q"] = 0.9 * M["q"] + gq
+            M["k"] = 0.9 * M["k"] + gk
+            M["v"] = 0.9 * M["v"] + gv
+            if compositional:
+                Ck_inv = eigh_inv_sqrt(Wk.T @ Wk + CM_DAMPING * I)
+                Cq_inv = eigh_inv_sqrt(Wq.T @ Wq + CM_DAMPING * I)
+                Wq.sub_((eta / 2) * msign_safe(M["q"] @ Ck_inv) @ Ck_inv)
+                Wk.sub_((eta / 2) * msign_safe(M["k"] @ Cq_inv) @ Cq_inv)
+            else:
+                Wq.sub_((eta / 2) * msign_safe(M["q"]))
+                Wk.sub_((eta / 2) * msign_safe(M["k"]))
+            Wv.sub_(eta * msign_safe(M["v"]))
+    with torch.no_grad():
+        state["A"].copy_(Wq @ Wk.T)   # keep the shared metrics in sync
+
+
+def round_comp_muon(state, Xb, Yb, mem, hyper):
+    _factored_round(state, Xb, Yb, mem, hyper["eta"], compositional=True)
+
+
+def round_factored_muon(state, Xb, Yb, mem, hyper):
+    _factored_round(state, Xb, Yb, mem, hyper["eta"], compositional=False)
 
 
 def round_replay(state, Xb, Yb, mem, hyper):
@@ -303,6 +370,8 @@ METHODS = {
     "func_anchor": (round_func_anchor, [{"lam": v} for v in (0.1, 1.0, 10.0, 100.0)]),
     "spec_clip":   (round_spec_clip,   [{"tau": v} for v in (0.003, 0.01, 0.03, 0.1, 0.3, 1.0)]),
     "muon":        (round_muon,        [{"eta": v} for v in (1e-3, 3e-3, 1e-2, 3e-2, 1e-1)]),
+    "comp_muon":   (round_comp_muon,   [{"eta": v} for v in (1e-3, 3e-3, 1e-2, 3e-2, 1e-1)]),
+    "factored_muon": (round_factored_muon, [{"eta": v} for v in (1e-3, 3e-3, 1e-2, 3e-2, 1e-1)]),
     "replay":      (round_replay,      [{"cap": v} for v in (8, 32, 1000)]),
     "ewc":         (round_ewc,         [{"lam": v} for v in (0.01, 0.03, 0.1, 0.3, 1.0)]),
     "null_proj":   (round_null_proj,   [{"tol": v} for v in (0.3, 0.1, 0.03)]),
@@ -444,6 +513,28 @@ def verify():
     print(f"5. round equations B*N*D = {BATCH * SEQ_LEN * DIM} vs parameters 2*D^2 = {2 * DIM * DIM} "
           f"-> per-round fit underdetermined: {'OK' if BATCH * SEQ_LEN * DIM < 2 * DIM * DIM else 'FAIL'}")
 
+    # 6. compositional budget: from the cond-10 unbalanced factored init, one
+    #    round at eta=0.01 — comp_muon's realized composed change ||D(Wq Wk^T)||_2
+    #    should track its K*eta budget, naive per-factor msign should overshoot it
+    eta = 0.01
+    realized = {}
+    for name, fn in (("comp_muon", round_comp_muon), ("factored_muon", round_factored_muon)):
+        gen3 = torch.Generator().manual_seed(5)
+        st = {"A": rand_orth(torch.Generator().manual_seed(12)).requires_grad_(True),
+              "Wv": rand_orth(torch.Generator().manual_seed(13)).requires_grad_(True)}
+        m = {}
+        Xb = gen_batch(gen3, batch_size=BATCH)
+        with torch.no_grad():
+            Yb = teacher(Xb)
+            A0 = st["A"].detach().clone()
+        fn(st, Xb, Yb, m, {"eta": eta})
+        with torch.no_grad():
+            realized[name] = torch.linalg.matrix_norm(st["A"] - A0, ord=2).item()
+    budget = INNER_STEPS * eta
+    print(f"6. composed-update budget K*eta = {budget:.3f} | realized ||D(WqWk^T)||_2: "
+          f"comp_muon {realized['comp_muon']:.3f}, factored_muon {realized['factored_muon']:.3f} "
+          f"{'OK' if realized['comp_muon'] <= budget * 1.25 < realized['factored_muon'] else 'CHECK'}")
+
 
 # ---------------------------------------------------------------- sweep + outputs
 
@@ -547,7 +638,8 @@ def save_outputs(results):
 
     # 3. strength-vs-error per method (small multiples)
     names = list(METHODS)
-    fig, axes = plt.subplots(2, 4, figsize=(13, 6))
+    ncols = math.ceil(len(names) / 2)
+    fig, axes = plt.subplots(2, ncols, figsize=(13, 6))
     for ax, m in zip(axes.flat, names):
         cfgs = sorted(results[m]["configs"], key=lambda c: list(c["hyper"].values())[0])
         hv = [list(c["hyper"].values())[0] for c in cfgs]
@@ -559,6 +651,8 @@ def save_outputs(results):
         ax.set_xlabel(list(cfgs[0]["hyper"].keys())[0], fontsize=8)
         ax.grid(True, which="both", alpha=0.3)
         ax.tick_params(labelsize=7)
+    for ax in axes.flat[len(names):]:
+        ax.set_visible(False)
     axes.flat[0].legend(fontsize=7)
     fig.suptitle("Strength of the forgetting-avoidance knob vs overall error", fontsize=11)
     plt.tight_layout()
@@ -567,7 +661,7 @@ def save_outputs(results):
 
     # 4. fit-vs-forget trade-off (every config; late-window forgetting)
     plt.figure(figsize=(8.5, 6))
-    markers = dict(zip(names, "osd^v<>p"))
+    markers = dict(zip(names, "osd^v<>pXP*"))
     for m, res in results.items():
         f = [c["mean_fit_geo"] for c in res["configs"]]
         p = [c["late_past_geo"] for c in res["configs"]]
