@@ -50,8 +50,9 @@ uv run ortho_updates.py             # full comparison sweep
 [from report](https://yaroslavvb.github.io/inverse-problems/reports/ortho_updates_report.html)
 
 - Exploiting **bilinearity** beats exploiting the manifold: a two-block Procrustes/least-squares
-  solver converges in 10 alternations; closed-form W_v + rotation steps reaches 1e-12 in ~121 steps
-  vs 338 for Adam
+  solver converges in 10 alternations
+  ([detailed report](https://yaroslavvb.github.io/inverse-problems/reports/two_block_report.html));
+  closed-form W_v + rotation steps reaches 1e-12 in ~121 steps vs 338 for Adam
 - Generic manifold methods (expm/Cayley/QR/polar, ~246 steps) beat Adam but only match well-tuned plain SGD (221),
   and deliver an exactly orthogonal solution (~1e-13); the rotation-angle-parameterized optimizers
   (so(n)-Adam, trivialization, clipped momentum) are slower (~290-314) but tolerate a ~10x wider learning-rate window

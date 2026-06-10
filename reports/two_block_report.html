@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Two-Block Exact Solver — Detailed Report</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Plus+Jakarta+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: rgba(22, 30, 49, 0.7);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --text-color: #f3f4f6;
+            --text-muted: #9ca3af;
+            --accent-primary: #3b82f6;
+            --accent-success: #10b981;
+            --accent-warn: #f59e0b;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background-color: var(--bg-color);
+            background-image:
+                radial-gradient(at 10% 20%, rgba(59, 130, 246, 0.1) 0px, transparent 50%),
+                radial-gradient(at 90% 80%, rgba(16, 185, 129, 0.05) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: var(--text-color);
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            min-height: 100vh;
+            padding: 2rem;
+            line-height: 1.55;
+        }
+        .container { max-width: 1100px; margin: 0 auto; }
+        header { margin-bottom: 2.5rem; border-bottom: 1px solid var(--card-border); padding-bottom: 1.5rem; }
+        h1 { font-family: 'Outfit', sans-serif; font-size: 2.2rem; font-weight: 800; }
+        .subtitle { color: var(--text-muted); margin-top: 0.5rem; max-width: 65rem; }
+        h2 { font-family: 'Outfit', sans-serif; font-size: 1.5rem; font-weight: 600; margin: 2.5rem 0 1rem; color: var(--accent-primary); }
+        h3 { font-family: 'Outfit', sans-serif; font-size: 1.1rem; font-weight: 600; margin: 1.5rem 0 0.5rem; }
+        p { margin: 0.6rem 0; }
+        .muted { color: var(--text-muted); }
+        .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 1.25rem 1.5rem; margin: 1rem 0; }
+        .tldr-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin: 1rem 0; }
+        .tldr-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 1.1rem 1.25rem; }
+        .tldr-card .big { font-family: 'Outfit', sans-serif; font-size: 1.8rem; font-weight: 800; color: var(--accent-success); }
+        .tldr-card .label { color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem; }
+        table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.87rem; }
+        th, td { border: 1px solid var(--card-border); padding: 0.45rem 0.6rem; text-align: left; }
+        th { background: rgba(59, 130, 246, 0.12); font-weight: 600; }
+        tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+        td.num { text-align: right; font-variant-numeric: tabular-nums; }
+        code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85em;
+            background: rgba(255,255,255,0.06); border-radius: 4px; padding: 0.1em 0.35em; }
+        pre { background: rgba(0,0,0,0.45); border: 1px solid var(--card-border); border-radius: 8px;
+            padding: 1rem; overflow-x: auto; font-size: 0.82rem; margin: 0.75rem 0; }
+        pre code { background: none; padding: 0; }
+        img.plot { width: 100%; border-radius: 10px; border: 1px solid var(--card-border); margin: 0.75rem 0; background: #fff; }
+        .eq { background: rgba(0,0,0,0.3); border-left: 3px solid var(--accent-primary); border-radius: 6px;
+            padding: 0.75rem 1rem; margin: 0.75rem 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 0.9rem; overflow-x: auto; }
+        .note { border-left: 3px solid var(--accent-warn); padding-left: 1rem; margin: 1.25rem 0; }
+        ul, ol { margin: 0.5rem 0 0.5rem 1.5rem; }
+        li { margin: 0.3rem 0; }
+        footer { margin-top: 3rem; border-top: 1px solid var(--card-border); padding-top: 1.25rem; color: var(--text-muted); font-size: 0.85rem; }
+        a { color: var(--accent-primary); }
+    </style>
+</head>
+<body>
+<div class="container">
+
+<header>
+    <h1>The Two-Block Exact Solver</h1>
+    <p class="subtitle">
+        A detailed description of <code>two_block_exact</code> — the alternating closed-form solver that recovers
+        a single-layer linear-attention teacher with orthogonal weights in ~10 alternations (eval MSE 8.6e-18),
+        where the best gradient method needs 121 steps and Adam needs 338. Companion to the
+        <a href="ortho_updates_report.html">orthogonality-exploiting updates report</a>.
+        Code: <code>ortho_updates.py</code> (solver) and <code>two_block_report.py</code> (diagnostics in this report).
+    </p>
+</header>
+
+<div class="tldr-grid">
+    <div class="tldr-card">
+        <div class="big">10 / 10 / 10</div>
+        <div class="label">alternations to ≤1e-17 eval MSE on seeds 42/43/44 (~0.34 s per alternation, ~3.4 s total).
+        Loss falls ~100x per alternation once it gets traction.</div>
+    </div>
+    <div class="tldr-card">
+        <div class="big">B ≥ 29</div>
+        <div class="label">identifiability needs batch size B ≥ D²/36 ≈ 28.4 sequences per alternation.
+        The bound is exactly tight: measured rank(Φ) = min(36B, 1024) at every tested B.</div>
+    </div>
+    <div class="tldr-card">
+        <div class="big">no lr, no init alignment</div>
+        <div class="label">no learning rate, momentum, or schedules; and unlike every rotation-based update,
+        its polar projections cross determinant components — the headline run starts with det(A) mismatched and crosses it.</div>
+    </div>
+    <div class="tldr-card">
+        <div class="big">floor ≈ 0.09 σ²</div>
+        <div class="label">with label noise of std σ on the teacher outputs, clean-eval MSE floors at ~0.09σ²
+        over six orders of magnitude in σ — exact variance-level scaling.</div>
+    </div>
+</div>
+
+<h2>1. The structure it exploits</h2>
+<div class="card">
+    <p>The single-layer linear attention forward map (D=32, N=8, causal cumsum mixing) is</p>
+    <div class="eq">out<sub>n</sub> = Σ<sub>m≤n</sub> (q<sub>n</sub>·k<sub>m</sub>) v<sub>m</sub>
+        = Σ<sub>m≤n</sub> (x<sub>n</sub><sup>T</sup> W<sub>q</sub>W<sub>k</sub><sup>T</sup> x<sub>m</sub>) · x<sub>m</sub><sup>T</sup> W<sub>v</sub>
+        = Σ<sub>m≤n</sub> (x<sub>n</sub><sup>T</sup> <b>A</b> x<sub>m</sub>) · x<sub>m</sub><sup>T</sup> <b>W<sub>v</sub></b>,
+        &nbsp;&nbsp; A := W<sub>q</sub>W<sub>k</sub><sup>T</sup>.</div>
+    <p>
+        Three observations make an exact alternating solver possible:
+    </p>
+    <ol>
+        <li><b>The map is bilinear in (A, W<sub>v</sub>).</b> Freeze either block and the model is <i>linear</i> in the other.
+            The individual matrices W<sub>q</sub>, W<sub>k</sub> only enter through A — the pair (W<sub>q</sub>R, W<sub>k</sub>R)
+            is a gauge freedom, which we fix by freezing W<sub>k</sub> at its (orthogonal) initialization forever and
+            setting W<sub>q</sub> = A·W<sub>k</sub>. Any orthogonal W<sub>k</sub> works.</li>
+        <li><b>Orthogonality turns the W<sub>v</sub> subproblem into orthogonal Procrustes</b>, which has a closed-form
+            global optimum (§2).</li>
+        <li><b>The problem is noiseless and realizable</b> (the teacher is in the search space), which is what lets the
+            unconstrained least-squares step for A land on an orthogonal matrix in the limit (§3).</li>
+    </ol>
+</div>
+
+<h2>2. Block V — exact orthogonal Procrustes for W<sub>v</sub></h2>
+<div class="card">
+    <p>With W<sub>q</sub>, W<sub>k</sub> fixed, collect the attention-mixed inputs
+        m<sub>n</sub> = Σ<sub>m≤n</sub> (q<sub>n</sub>·k<sub>m</sub>) x<sub>m</sub> into the rows of a matrix
+        M ∈ ℝ<sup>(B·N)×D</sup> (the <code>tril</code> mask reproduces the causal cumsum, diagonal included).
+        The model output is exactly <code>M @ W_v</code>, so the subproblem is</p>
+    <div class="eq">min<sub>W ∈ O(D)</sub> ‖M W − Y‖<sub>F</sub>² = ‖M‖² + ‖Y‖² − 2 tr(W<sup>T</sup> M<sup>T</sup>Y)
+        &nbsp;&nbsp;<span class="muted">// ‖MW‖² = tr(W<sup>T</sup>M<sup>T</sup>MW) = tr(M<sup>T</sup>M) is constant for square orthogonal W</span></div>
+    <p>
+        Maximizing tr(W<sup>T</sup> M<sup>T</sup>Y) over O(D) is the <b>orthogonal Procrustes problem</b> (Schönemann 1966):
+        the global optimum is the polar factor
+    </p>
+    <div class="eq">W<sub>v</sub> ← polar(M<sup>T</sup>Y) = UV<sup>T</sup>, &nbsp; where M<sup>T</sup>Y = UΣV<sup>T</sup>.</div>
+    <p>
+        Two implementation notes. First, this is the <i>exact constrained global minimizer</i> — over all of O(D),
+        including the det = −1 component, which is why this step crosses determinant components freely (§6).
+        Second, we compute the polar factor via <code>eigh</code> of M<sup>T</sup>Y's Gram matrix rather than SVD —
+        LAPACK's divide-and-conquer <code>gesdd</code> is known to fail on certain degenerate inputs (it crashed on
+        skew matrices elsewhere in this experiment's harness), and the eigh route is equally cheap at D=32.
+        For this particular input the choice is defensive rather than necessary: at convergence
+        M<sup>T</sup>Y = (M<sup>T</sup>M)·W<sub>v</sub>*, whose singular values span a benign ~4x range
+        (the attention-mixed rows m<sub>n</sub> have strongly position-dependent norms), and its polar factor
+        is exactly W<sub>v</sub>*.
+    </p>
+<pre><code>def solve_block_v(student, X, Y):
+    Q, K = X @ student.W_q, X @ student.W_k
+    scores = torch.tril(torch.einsum("bnd,bmd->bnm", Q, K))   # causal q_n . k_m, diag included
+    M = torch.einsum("bnm,bmd->bnd", scores, X).reshape(-1, DIM)
+    student.W_v.copy_(polar(M.T @ Y.reshape(-1, DIM)))        # polar via eigh, not gesdd
+
+def polar(Z, eps=1e-30):                                      # Z (Z^T Z)^{-1/2}
+    w, Q = torch.linalg.eigh(Z.T @ Z)
+    return Z @ (Q * w.clamp_min(eps).rsqrt()) @ Q.T</code></pre>
+</div>
+
+<h2>3. Block A — least squares + polar projection</h2>
+<div class="card">
+    <p>With W<sub>v</sub> fixed (so v<sub>m</sub> = x<sub>m</sub><sup>T</sup>W<sub>v</sub> is known), the output is linear in the
+        D² entries of A:</p>
+    <div class="eq">out[b,n,e] = Σ<sub>d,f</sub> X[b,n,d] · A[d,f] · C[b,n,e,f], &nbsp;&nbsp;
+        C[b,n,e,f] = Σ<sub>m≤n</sub> V[b,m,e] X[b,m,f] &nbsp;<span class="muted">(a cumsum over m)</span></div>
+    <p>
+        Flattening rows over (b,n,e) and columns over (d,f) gives a design matrix
+        Φ ∈ ℝ<sup>(B·N·D) × D²</sup> with <code>out = Φ @ vec(A)</code>. We solve the unconstrained least-squares
+        problem and project the solution onto O(D):
+    </p>
+    <div class="eq">A ← polar( argmin<sub>A ∈ ℝ<sup>D×D</sup></sup></sub> ‖Φ vec(A) − vec(Y)‖² ), &nbsp;&nbsp; W<sub>q</sub> ← A · W<sub>k</sub>.</div>
+<pre><code>def solve_block_a(student, X, Y):
+    V = X @ student.W_v
+    C = torch.cumsum(V.unsqueeze(-1) * X.unsqueeze(2), dim=1)            # (B,N,E,D)
+    Phi = torch.einsum("bnd,bnef->bnedf", X, C).reshape(-1, DIM * DIM)   # rows (b,n,e), cols d*D+f
+    sol = torch.linalg.lstsq(Phi, Y.reshape(-1)).solution
+    student.W_q.copy_(polar(sol.reshape(DIM, DIM)) @ student.W_k)        # gauge: W_k frozen</code></pre>
+    <div class="note">
+        <p>
+            <b>An honest asymmetry.</b> Block V is the exact optimum of its constrained subproblem.
+            Block A is <i>not</i>: minimizing over A ∈ O(D) directly is a quadratically-constrained problem with no
+            closed form (the Procrustes reduction fails because ‖Φ vec(A)‖ is not constant over orthogonal A —
+            Φ's columns are not orthonormal). Unconstrained least squares followed by polar projection is a
+            heuristic. It works here because the problem is <b>realizable</b>: when W<sub>v</sub> is correct, the
+            consistent system returns exactly A* = W<sub>q</sub>*W<sub>k</sub>*<sup>T</sup>, which is already orthogonal,
+            and the projection becomes a no-op. Away from convergence the projection error is what bounds the
+            per-alternation contraction (§4). A unit test in <code>ortho_updates.py --verify</code> checks the
+            recovery: with W<sub>v</sub> = W<sub>v</sub>* plugged in, block A returns A* to ~1e-14.
+        </p>
+    </div>
+</div>
+
+<h2>4. Convergence: ~100x per alternation</h2>
+<div class="card">
+    <p>
+        Each alternation draws a <b>fresh batch</b> (B=64 sequences) and runs block V then block A.
+        From the standard unaligned seed-42 init (eval MSE 8.7e-3):
+    </p>
+    <table>
+        <thead><tr><th>alternation</th><th class="num">after block V</th><th class="num">after block A</th>
+            <th class="num">distance to teacher (gauge-quotiented)</th><th class="num">max ‖W<sup>T</sup>W−I‖</th></tr></thead>
+        <tbody>
+        <tr><td>1</td><td class="num">8.0e-3</td><td class="num">7.7e-3</td><td class="num">10.8</td><td class="num">3.4e-10</td></tr>
+        <tr><td>2</td><td class="num">7.6e-3</td><td class="num">7.1e-3</td><td class="num">9.5</td><td class="num">8.6e-14</td></tr>
+        <tr><td>3</td><td class="num">5.7e-3</td><td class="num">2.3e-3</td><td class="num">4.3</td><td class="num">4.7e-14</td></tr>
+        <tr><td>4</td><td class="num">3.8e-4</td><td class="num">2.5e-5</td><td class="num">4.5e-1</td><td class="num">1.5e-14</td></tr>
+        <tr><td>5</td><td class="num">3.4e-6</td><td class="num">2.1e-7</td><td class="num">4.0e-2</td><td class="num">1.8e-14</td></tr>
+        <tr><td>6</td><td class="num">2.8e-8</td><td class="num">1.5e-9</td><td class="num">3.4e-3</td><td class="num">1.6e-14</td></tr>
+        <tr><td>7</td><td class="num">1.9e-10</td><td class="num">1.2e-11</td><td class="num">3.1e-4</td><td class="num">1.7e-14</td></tr>
+        <tr><td>8</td><td class="num">1.5e-12</td><td class="num">1.1e-13</td><td class="num">2.9e-5</td><td class="num">1.6e-14</td></tr>
+        <tr><td>9</td><td class="num">1.5e-14</td><td class="num">9.2e-16</td><td class="num">2.7e-6</td><td class="num">1.7e-14</td></tr>
+        <tr><td>10</td><td class="num">1.2e-16</td><td class="num">8.6e-18</td><td class="num">2.5e-7</td><td class="num">1.5e-14</td></tr>
+        </tbody>
+    </table>
+    <p>
+        Three regimes are visible. Alternations 1–3 are a slow capture phase: each block solves against a badly wrong
+        other block, so the closed forms make limited progress (the first A is the polar projection of a far-from-orthogonal
+        least-squares fit). From alternation 4 on, convergence is geometric at a remarkably steady <b>~100x per
+        alternation</b> (~7x from the block-V half-step times ~15x from the block-A half-step), and the gauge-quotiented
+        weight distance contracts ~10x per alternation — consistent with MSE ≈ distance². This is the expected behavior of alternating minimization on
+        a realizable bilinear problem: the error in each block's solve is proportional to the current error of the
+        <i>other</i> block, giving multiplicative contraction. Orthogonality is at machine precision (~1e-14)
+        from alternation 2 onward — the iterates are not approximately orthogonal, they are exactly orthogonal
+        by construction of the polar map.
+    </p>
+    <img class="plot" src="two_block_convergence.png" alt="Half-step convergence and teacher recovery">
+</div>
+
+<h2>5. Identifiability: the rank bound is exactly tight</h2>
+<div class="card">
+    <p>
+        Block A needs Φ to have full column rank D² = 1024, and the causal structure caps the rank per sequence.
+        For one sequence, row (n,e) of Φ is Σ<sub>m≤n</sub> V[m,e] · (x<sub>n</sub> ⊗ x<sub>m</sub>) — every row lies in
+        span{ x<sub>n</sub> ⊗ x<sub>m</sub> : m ≤ n }, which has dimension at most N(N+1)/2 = 36. Hence
+    </p>
+    <div class="eq">rank(Φ) ≤ min( B · N(N+1)/2, D² ) &nbsp;&nbsp;⇒&nbsp;&nbsp; B ≥ 2D²/(N(N+1)) = 1024/36 ≈ 28.4 &nbsp;⇒&nbsp; B ≥ 29.</div>
+    <p>
+        Measured ranks hit this bound exactly at every tested batch size, and the solver shows a sharp phase
+        transition — with a one-batch margin caveat:
+    </p>
+    <table>
+        <thead><tr><th class="num">B</th><th class="num">rank(Φ) measured</th><th class="num">bound min(36B, 1024)</th>
+            <th class="num">alternations to 1e-12</th><th class="num">final eval MSE (≤40 alt.)*</th></tr></thead>
+        <tbody>
+        <tr><td class="num">8</td><td class="num">288</td><td class="num">288</td><td class="num">never</td><td class="num">8.5e-3</td></tr>
+        <tr><td class="num">16</td><td class="num">576</td><td class="num">576</td><td class="num">never</td><td class="num">2.5e-3</td></tr>
+        <tr><td class="num">24</td><td class="num">864</td><td class="num">864</td><td class="num">never</td><td class="num">3.4e-4</td></tr>
+        <tr><td class="num">28</td><td class="num">1008</td><td class="num">1008</td><td class="num">never</td><td class="num">8.5e-3</td></tr>
+        <tr><td class="num">29</td><td class="num">1024</td><td class="num">1024</td><td class="num">never</td><td class="num">8.3e-3</td></tr>
+        <tr><td class="num">32</td><td class="num">1024</td><td class="num">1024</td><td class="num">17</td><td class="num">1.7e-18</td></tr>
+        <tr><td class="num">40</td><td class="num">1024</td><td class="num">1024</td><td class="num">13</td><td class="num">9.5e-19</td></tr>
+        <tr><td class="num">48</td><td class="num">1024</td><td class="num">1024</td><td class="num">11</td><td class="num">4.8e-18</td></tr>
+        <tr><td class="num">64</td><td class="num">1024</td><td class="num">1024</td><td class="num">8</td><td class="num">8.6e-18</td></tr>
+        <tr><td class="num">96</td><td class="num">1024</td><td class="num">1024</td><td class="num">10</td><td class="num">2.6e-19</td></tr>
+        </tbody>
+    </table>
+    <p>
+        Note <b>B=29: full rank, still fails.</b> At exactly zero margin Φ's trailing singular values are small
+        (measured cond(Φ) ≈ 292 at B=29, vs 51 at B=32 and 8.7 at B=64) — modest by float64 standards, but away
+        from convergence the system is <i>inconsistent</i> (W<sub>v</sub> is still wrong), and the ~100x amplification
+        of that residual through the smallest singular directions defeats the per-alternation contraction, so the
+        alternation never gains traction. In practice the solver needs a modest rank <i>margin</i> — B=32 reaches
+        1e-12 in 17 alternations, and more data per alternation buys faster capture up to B≈64. The default is B=64.
+    </p>
+    <p class="muted">* converging runs early-stop once eval MSE ≤ 1e-17 (e.g. B=64 stops at alternation 10);
+        only the non-converging rows ran the full 40 alternations.</p>
+    <img class="plot" src="two_block_batch_ablation.png" alt="Batch-size ablation with rank bound">
+</div>
+
+<h2>6. Robustness</h2>
+<div class="card">
+    <h3>Determinant components: immune by construction</h3>
+    <p>
+        Every rotation-based update (expm, Cayley, retractions, trivialization) preserves det(W) and is therefore
+        trapped in its connected component of O(D)³ — 3/4 of random inits can never reach the teacher
+        (see <a href="ortho_updates_report.html">main report, Finding 3</a>). The two-block solver's polar steps
+        assign a globally optimal orthogonal matrix per block, det = −1 branch included, and its only dependence on
+        the initialization at all is (W<sub>q</sub>, W<sub>k</sub>) in the first block-V solve — block V overwrites
+        W<sub>v</sub> without ever reading it, and block A overwrites W<sub>q</sub>. The headline run is itself the
+        component-crossing demonstration: the unaligned seed-42 init has det(A) = det(W<sub>q</sub>W<sub>k</sub><sup>T</sup>) = −1
+        against the teacher's +1 — the configuration from which every det-preserving method floors at ~5e-4 forever —
+        and the solver crosses it (final det(A) = +1, with det(W<sub>q</sub>) flipping +1 → −1 against the frozen
+        det(W<sub>k</sub>) = −1), reaching 8.6e-18 in 10 alternations.
+    </p>
+    <h3>Label noise: exact variance-level floor</h3>
+    <p>
+        With i.i.d. Gaussian noise of std σ added to the teacher outputs during solving (evaluation stays clean),
+        the solver floors at <b>≈ 0.089 σ²</b> across six orders of magnitude in σ (σ = 1e-8 → MSE 8.9e-18,
+        σ = 1e-6 → 8.9e-14, σ = 1e-4 → 8.9e-10, σ = 1e-2 → 8.9e-6; the ratio MSE/σ² is 0.0888 at all four points).
+        The constant decomposes across the two blocks (measured by perturbing each block alone from the exact
+        solution): block V contributes ≈ 0.032σ², matching its constrained degrees of freedom over the observations
+        — dim O(D) / (B·N·D) = 496/16384 ≈ 0.030; block A contributes ≈ 0.058σ² (its unconstrained least-squares
+        error is ≈ 0.116σ², above the naive 1024/16384 because the design Φ is anisotropic, and the polar projection
+        roughly halves it). The sum, 0.090σ², matches the measured floor. The closed-form character of the solver
+        is not brittle to noise — it absorbs it at the variance level, like any least-squares estimator.
+    </p>
+    <img class="plot" src="two_block_noise.png" alt="Noise robustness">
+</div>
+
+<h2>7. Cost and scaling</h2>
+<div class="card">
+    <ul>
+        <li><b>Per alternation</b> (D=32, N=8, B=64): building Φ is a (B·N·D)×D² = 16384×1024 float64 array
+            (134 MB, B·N·D³ memory); the least-squares solve is the dominant cost at ~2(B·N·D)·D⁴ ≈ 3.4e10 flops.
+            Measured: <b>0.34 s per alternation</b> on CPU, ~3.4 s for the full solve.</li>
+        <li><b>Scaling</b>: compute grows as B·N·D⁵ and memory as B·N·D³, with B itself needing to grow as
+            D²/N² — this is a small-D instrument, exact and fast at D=32, impractical at D ≳ 128 without
+            exploiting Φ's Kronecker structure.</li>
+        <li><b>Honest wall-clock comparison</b>: at this scale a full 338-step Adam run also takes only seconds.
+            The solver's advantages are alternation count (10 vs hundreds of steps), sample efficiency per unit
+            of progress, terminal accuracy (8.6e-18 vs ~9e-17 where gradient runs stop), exact orthogonality
+            throughout, and zero hyperparameters — not raw seconds at D=32.</li>
+    </ul>
+</div>
+
+<h2>8. Scope and limitations</h2>
+<div class="card">
+    <ul>
+        <li><b>White-box method.</b> It requires knowing the global bilinear structure of the model — it solves
+            the inverse problem, it does not "train" a black box. The gradient methods in the main report only
+            need gradients.</li>
+        <li><b>Single layer only.</b> Composing attention layers destroys the per-block linearity; the natural
+            extension (layer-wise alternation with targets, in the spirit of the
+            <a href="linattention_report.html">altprop experiment</a>) is open.</li>
+        <li><b>Square, orthogonal W<sub>v</sub>.</b> The Procrustes reduction in block V uses ‖MW‖<sub>F</sub> constant
+            over O(D), which needs W<sub>v</sub> square orthogonal. (Block A's lstsq+polar would survive relaxations;
+            block V would become a weighted Procrustes problem without a closed form.)</li>
+        <li><b>Identifiability per alternation.</b> Needs B ≥ 29 fresh sequences (with margin: B ≳ 32) per
+            alternation at D=32, N=8.</li>
+        <li><b>Realizability.</b> The polar projection in block A is exact only in the realizable limit; under
+            model mismatch (teacher off-manifold or different architecture) the fixed point would be biased,
+            unlike a straight gradient method on the same loss.</li>
+    </ul>
+</div>
+
+<h2>9. Reproduce</h2>
+<div class="card">
+<pre><code>uv run ortho_updates.py --verify   # includes the block-A unit test (recovers A* to ~1e-14)
+uv run two_block_report.py         # regenerates every number and plot in this report (~90 s CPU)</code></pre>
+<p class="muted">
+    Artifacts: <code>two_block_convergence.png</code>, <code>two_block_batch_ablation.png</code>,
+    <code>two_block_noise.png</code>, <code>two_block_results.json</code> (all raw numbers).
+    Solver implementation: <code>two_block_exact()</code> in <code>ortho_updates.py</code>;
+    instrumented version in <code>two_block_report.py</code>.
+</p>
+</div>
+
+<footer>
+    Experiment 09jun26 · companion to the
+    <a href="ortho_updates_report.html">orthogonality-exploiting updates report</a> ·
+    single-layer linear attention, D=32, N=8, float64.
+</footer>
+
+</div>
+</body>
+</html>

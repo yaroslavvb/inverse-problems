@@ -89,7 +89,7 @@
 <div class="tldr-grid">
     <div class="tldr-card">
         <div class="big">10 alternations</div>
-        <div class="label">two-block exact solver (Procrustes + least-squares) reaches 8.6e-18 MSE —
+        <div class="label"><a href="two_block_report.html">two-block exact solver</a> (Procrustes + least-squares) reaches 8.6e-18 MSE —
         vs 338 gradient steps for Adam. Exploiting <i>bilinearity</i> is worth far more than exploiting the manifold.</div>
     </div>
     <div class="tldr-card">
@@ -153,7 +153,7 @@
     </tr>
     </thead>
     <tbody>
-    <tr><td><b>two_block_exact</b> <span class="badge">solver</span></td>
+    <tr><td><b><a href="two_block_report.html">two_block_exact</a></b> <span class="badge">solver</span></td>
         <td>alternate: W<sub>v</sub> ← polar(M<sup>T</sup>Y) (Procrustes); A ← polar(lstsq(Φ, vec Y)); W<sub>q</sub> ← A·W<sub>k</sub></td>
         <td>B=64, no lr</td><td class="num"><b>10 alternations</b></td><td class="num">1e-14</td><td class="num">2.5e-7</td></tr>
     <tr><td><b>procrustes_alt</b></td>
@@ -204,7 +204,9 @@ results are in §4. Full per-LR tables: <code>ortho_updates_results.json</code>.
             in W<sub>v</sub> and orthogonality makes the subproblem an <i>orthogonal Procrustes</i> problem with the closed form
             W<sub>v</sub> = polar(M<sup>T</sup>Y); with W<sub>v</sub> fixed it is linear in A, solved by least squares + polar
             projection. Ten alternations on fresh 64-sequence batches reach 8.6e-18 — and it crosses determinant
-            components freely (polar projections are not det-preserving), so it needs no init alignment at all.</li>
+            components freely (polar projections are not det-preserving), so it needs no init alignment at all.
+            <b><a href="two_block_report.html">Detailed report on the two-block solver →</a></b>
+            (derivation, half-step convergence, the B ≥ 29 rank bound and its phase transition, noise robustness, limitations)</li>
         <li><b>procrustes_alt</b>, the same idea as an online update (closed-form W<sub>v</sub> each step, rotation steps for
             W<sub>q</sub>, W<sub>k</sub>), is the fastest gradient-style method at <b>121 / 100 / 119</b> steps — 2.8x faster than Adam
             and 2x faster than any generic manifold method.</li>
