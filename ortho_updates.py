@@ -529,8 +529,10 @@ def identifiable_distances(student, teacher):
 
 
 def train_run(method_name, lr, teacher, init_state, eval_x, eval_y,
-              num_steps=NUM_STEPS, data_seed=1234, hyper=None):
-    """One training run. Every (method, lr) sees the same init and data stream."""
+              num_steps=NUM_STEPS, data_seed=1234, hyper=None, stop_at=None):
+    """One training run. Every (method, lr) sees the same init and data stream.
+    stop_at overrides the early-stop loss (default CONVERGED_MSE) — used by the
+    early-phase tuner, which only needs the run up to its target threshold."""
     student = LinearSelfAttention(DIM)
     student.load_state_dict(copy.deepcopy(init_state))
     factory, _, _ = METHODS[method_name]
@@ -560,7 +562,7 @@ def train_run(method_name, lr, teacher, init_state, eval_x, eval_y,
         for t in THRESHOLDS:
             if steps_to[t] is None and el <= t:
                 steps_to[t] = step
-        if el <= CONVERGED_MSE:
+        if el <= (stop_at if stop_at is not None else CONVERGED_MSE):
             break
     return {
         "method": method_name, "lr": lr, "hyper": hyper or {}, "status": status,

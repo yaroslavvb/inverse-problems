@@ -2,6 +2,7 @@
  "init_loss_aligned": 0.008658592028363034,
  "thr_10x": 0.0008658592028363034,
  "thr_100x": 8.658592028363033e-05,
+ "tune_steps_cap": 500,
  "methods": {
   "sgd": {
    "lr": 316.22776601683796,
@@ -106,6 +107,112 @@
    "steps_to_10x": 56,
    "steps_to_100x": 84,
    "steps_to_1e-12": 314
+  }
+ },
+ "early_tuned": {
+  "sgd": {
+   "lr": 316.22776601683796,
+   "hyper": {},
+   "steps_to_100x": 122,
+   "steps_to_10x": 82,
+   "grid_extended": false
+  },
+  "adam": {
+   "lr": 0.03162277660168379,
+   "hyper": {},
+   "steps_to_100x": 78,
+   "steps_to_10x": 39,
+   "grid_extended": false
+  },
+  "exp_sgd": {
+   "lr": 316.22776601683796,
+   "hyper": {},
+   "steps_to_100x": 138,
+   "steps_to_10x": 120,
+   "grid_extended": false
+  },
+  "cayley_sgd": {
+   "lr": 316.22776601683796,
+   "hyper": {},
+   "steps_to_100x": 138,
+   "steps_to_10x": 120,
+   "grid_extended": false
+  },
+  "exp_momentum": {
+   "lr": 316.22776601683796,
+   "hyper": {},
+   "steps_to_100x": 88,
+   "steps_to_10x": 57,
+   "grid_extended": false
+  },
+  "so_adam": {
+   "lr": 0.03162277660168379,
+   "hyper": {},
+   "steps_to_100x": 84,
+   "steps_to_10x": 57,
+   "grid_extended": false
+  },
+  "qr_retraction": {
+   "lr": 316.22776601683796,
+   "hyper": {},
+   "steps_to_100x": 138,
+   "steps_to_10x": 120,
+   "grid_extended": false
+  },
+  "polar_retraction": {
+   "lr": 316.22776601683796,
+   "hyper": {},
+   "steps_to_100x": 138,
+   "steps_to_10x": 120,
+   "grid_extended": false
+  },
+  "landing": {
+   "lr": 316.22776601683796,
+   "hyper": {
+    "gamma": 0.1
+   },
+   "steps_to_100x": 136,
+   "steps_to_10x": 119,
+   "grid_extended": false
+  },
+  "penalty_adam": {
+   "lr": 0.1,
+   "hyper": {
+    "mu": 0.001
+   },
+   "steps_to_100x": 105,
+   "steps_to_10x": 81,
+   "grid_extended": false
+  },
+  "adam_decoupled_orth": {
+   "lr": 0.03162277660168379,
+   "hyper": {
+    "gamma": 0.1
+   },
+   "steps_to_100x": 53,
+   "steps_to_10x": 31,
+   "grid_extended": false
+  },
+  "muon_polar": {
+   "lr": 0.03162277660168379,
+   "hyper": {},
+   "steps_to_100x": 488,
+   "steps_to_10x": 422,
+   "grid_extended": false
+  },
+  "procrustes_alt": {
+   "lr": 1000.0,
+   "hyper": {},
+   "steps_to_100x": 20,
+   "steps_to_10x": 16,
+   "grid_extended": true
+  },
+  "triv_adam": {
+   "lr": 0.03162277660168379,
+   "hyper": {},
+   "steps_to_100x": 84,
+   "steps_to_10x": 56,
+   "grid_extended": false
   }
  },
  "two_block_exact": {
