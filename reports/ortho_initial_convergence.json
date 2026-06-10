@@ -1,0 +1,116 @@
+{
+ "init_loss_aligned": 0.008658592028363034,
+ "thr_10x": 0.0008658592028363034,
+ "thr_100x": 8.658592028363033e-05,
+ "methods": {
+  "sgd": {
+   "lr": 316.22776601683796,
+   "hyper": {},
+   "steps_to_10x": 82,
+   "steps_to_100x": 122,
+   "steps_to_1e-12": 221
+  },
+  "adam": {
+   "lr": 0.01,
+   "hyper": {},
+   "steps_to_10x": 83,
+   "steps_to_100x": 110,
+   "steps_to_1e-12": 338
+  },
+  "exp_sgd": {
+   "lr": 316.22776601683796,
+   "hyper": {},
+   "steps_to_10x": 120,
+   "steps_to_100x": 138,
+   "steps_to_1e-12": 246
+  },
+  "cayley_sgd": {
+   "lr": 316.22776601683796,
+   "hyper": {},
+   "steps_to_10x": 120,
+   "steps_to_100x": 138,
+   "steps_to_1e-12": 246
+  },
+  "exp_momentum": {
+   "lr": 100.0,
+   "hyper": {},
+   "steps_to_10x": 75,
+   "steps_to_100x": 98,
+   "steps_to_1e-12": 290
+  },
+  "so_adam": {
+   "lr": 0.03162277660168379,
+   "hyper": {},
+   "steps_to_10x": 57,
+   "steps_to_100x": 84,
+   "steps_to_1e-12": 310
+  },
+  "qr_retraction": {
+   "lr": 316.22776601683796,
+   "hyper": {},
+   "steps_to_10x": 120,
+   "steps_to_100x": 138,
+   "steps_to_1e-12": 246
+  },
+  "polar_retraction": {
+   "lr": 316.22776601683796,
+   "hyper": {},
+   "steps_to_10x": 120,
+   "steps_to_100x": 138,
+   "steps_to_1e-12": 246
+  },
+  "landing": {
+   "lr": 316.22776601683796,
+   "hyper": {
+    "gamma": 0.1
+   },
+   "steps_to_10x": 119,
+   "steps_to_100x": 136,
+   "steps_to_1e-12": 244
+  },
+  "penalty_adam": {
+   "lr": 0.1,
+   "hyper": {
+    "mu": 0.001
+   },
+   "steps_to_10x": 81,
+   "steps_to_100x": 105,
+   "steps_to_1e-12": 322
+  },
+  "adam_decoupled_orth": {
+   "lr": 0.01,
+   "hyper": {
+    "gamma": 0.03
+   },
+   "steps_to_10x": 76,
+   "steps_to_100x": 113,
+   "steps_to_1e-12": 290
+  },
+  "muon_polar": {
+   "lr": 0.03162277660168379,
+   "hyper": {},
+   "steps_to_10x": 422,
+   "steps_to_100x": 488,
+   "steps_to_1e-12": null
+  },
+  "procrustes_alt": {
+   "lr": 316.22776601683796,
+   "hyper": {},
+   "steps_to_10x": 52,
+   "steps_to_100x": 62,
+   "steps_to_1e-12": 121
+  },
+  "triv_adam": {
+   "lr": 0.03162277660168379,
+   "hyper": {},
+   "steps_to_10x": 56,
+   "steps_to_100x": 84,
+   "steps_to_1e-12": 314
+  }
+ },
+ "two_block_exact": {
+  "alt_to_10x": 4,
+  "alt_to_100x": 4,
+  "init_loss": 0.008692695284588145
+ }
+}

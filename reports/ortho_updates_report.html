@@ -291,6 +291,57 @@ results are in §4. Full per-LR tables: <code>ortho_updates_results.json</code>.
     </ul>
 </div>
 
+<h3>Finding 6 — initial convergence: the first 100x is a different race</h3>
+<div class="finding">
+    <p>
+        The headline metric (steps to 1e-12) measures deep convergence into the noiseless optimum. If instead one
+        only needs the loss down <b>100x from its initial value</b> (init eval loss 8.66e-3 → threshold 8.66e-5 —
+        the regime that matters when the problem isn't noiseless and exactly realizable), the leaderboard reshuffles.
+        Computed from the same stored best-run curves — no new training or tuning:
+    </p>
+    <table>
+        <thead><tr><th>method</th><th class="num">steps to 10x</th><th class="num">steps to 100x</th>
+            <th class="num">steps to 1e-12 (rank)</th></tr></thead>
+        <tbody>
+        <tr><td><b>two_block_exact</b> (solver)</td><td class="num">4 alternations</td><td class="num">4 alternations</td><td class="num">8 alt.</td></tr>
+        <tr><td><b>procrustes_alt</b></td><td class="num">52</td><td class="num"><b>62</b></td><td class="num">121 (1st)</td></tr>
+        <tr><td>so_adam</td><td class="num">57</td><td class="num"><b>84</b></td><td class="num">310 (10th)</td></tr>
+        <tr><td>triv_adam</td><td class="num">56</td><td class="num"><b>84</b></td><td class="num">314 (11th)</td></tr>
+        <tr><td>exp_momentum</td><td class="num">75</td><td class="num">98</td><td class="num">290 (8th)</td></tr>
+        <tr><td>penalty_adam</td><td class="num">81</td><td class="num">105</td><td class="num">322 (12th)</td></tr>
+        <tr><td>adam</td><td class="num">83</td><td class="num">110</td><td class="num">338 (13th)</td></tr>
+        <tr><td>adam_decoupled_orth</td><td class="num">76</td><td class="num">113</td><td class="num">290 (8th)</td></tr>
+        <tr><td>sgd</td><td class="num">82</td><td class="num">122</td><td class="num">221 (2nd)</td></tr>
+        <tr><td>landing</td><td class="num">119</td><td class="num">136</td><td class="num">244 (3rd)</td></tr>
+        <tr><td>exp_sgd / cayley / qr / polar</td><td class="num">120</td><td class="num">138</td><td class="num">246 (4th)</td></tr>
+        <tr><td>muon_polar</td><td class="num">422</td><td class="num">488</td><td class="num">never</td></tr>
+        </tbody>
+    </table>
+    <p>
+        The deep-convergence ranking roughly <b>inverts</b> in the early phase. The so(n)-Adam-style optimizers
+        (so_adam, triv_adam — 10th/11th at 1e-12) are the fastest gradient methods to the first 100x (84 steps),
+        and plain Adam is competitive (110) — adaptive, rotation-angle-sized steps front-load their progress.
+        The lr=316 manifold family (exp_sgd, Cayley, retractions, landing) wins the deep race but
+        <i>back-loads</i> it: those runs are still at ~0.3x of the init loss at step 100, cross 10x only around
+        step 119–120, and then drop extremely steeply — the large constant lr only bites once the iterate reaches
+        the basin where huge steps are stable. (Plain SGD at the same lr is the exception: its early phase matches
+        Adam's — 10x at step 82 — though its 100x crossing still trails slightly at 122.)
+        muon_polar is last here too, crossing 100x at step 488: its constant-norm steps make early speed scale
+        with lr but its floor scale with lr² — at the next grid point up (lr 0.1, floor 4.6e-4) it could not cross
+        the 100x threshold at all, so its deep-tuned lr 0.0316 is already near its early-phase optimum.
+        procrustes_alt leads both races: the closed-form W<sub>v</sub> block removes a third of the problem
+        exactly from step 1.
+    </p>
+    <p class="muted">
+        Caveat: every curve is the config tuned for fastest deep convergence (steps to 1e-12), reused as-is —
+        per the analysis constraint, nothing was retuned for the early phase. A method's early-phase optimum may
+        sit at a different lr, and early-phase timing at non-best lrs is not stored (only best-run curves were
+        saved), so this table is a reshuffle under deep-tuned configs, not a tuned early-phase benchmark.
+        Numbers: <code>ortho_initial_convergence.py</code> → <code>ortho_initial_convergence.json</code>.
+    </p>
+</div>
+<img class="plot" src="ortho_initial_convergence.png" alt="Early-phase loss curves and steps to first 100x reduction">
+
 <h2>4. Unaligned-init results (the floor)</h2>
 <table>
     <thead><tr><th>method</th><th class="num">steps to 1e-12 (unaligned)</th><th class="num">final loss</th><th>component crossing</th></tr></thead>
@@ -308,12 +359,14 @@ random seeds is 1/2 rather than the family's 3/4.</p>
 
 <h2>5. Reproduce</h2>
 <div class="card">
-<pre><code>uv run ortho_updates.py --verify   # 8 pre-flight math checks (descent identity, negative control, ...)
-uv run ortho_updates.py --smoke    # 50-step smoke test of all methods
-uv run ortho_updates.py            # full sweep (~25 min CPU): both arms, 3 seeds, plots + JSON</code></pre>
+<pre><code>uv run ortho_updates.py --verify          # 8 pre-flight math checks (descent identity, negative control, ...)
+uv run ortho_updates.py --smoke           # 50-step smoke test of all methods
+uv run ortho_updates.py                   # full sweep (~25 min CPU): both arms, 3 seeds, plots + JSON
+uv run ortho_initial_convergence.py       # Finding 6 post-processing (seconds; no training)</code></pre>
 <p class="muted">
     Artifacts: <code>ortho_loss_curves.png</code>, <code>ortho_lr_robustness.png</code>, <code>ortho_drift.png</code>,
-    <code>ortho_det_obstruction.png</code>, <code>ortho_updates_results.json</code> (per-LR tables and full curves).
+    <code>ortho_det_obstruction.png</code>, <code>ortho_updates_results.json</code> (per-LR tables and full curves),
+    <code>ortho_initial_convergence.png</code>/<code>.json</code>.
     Methodology: every run shares the same teacher, init, eval set, and data stream; only the update rule and its
     hyperparameters differ. Design and implementation were cross-checked by independent review passes; the landing
     coupling bug, the penalty μ scale, and the scale-gauge artifact in the distance metric were all caught that way

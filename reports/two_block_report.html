@@ -224,6 +224,8 @@ def polar(Z, eps=1e-30):                                      # Z (Z^T Z)^{-1/2}
         <i>other</i> block, giving multiplicative contraction. Orthogonality is at machine precision (~1e-14)
         from alternation 2 onward — the iterates are not approximately orthogonal, they are exactly orthogonal
         by construction of the polar map.
+        (For the cross-method view of this early regime — steps to the first 100x loss reduction, where the solver
+        crosses at alternation 4 — see <a href="ortho_updates_report.html">main report, Finding 6</a>.)
     </p>
     <img class="plot" src="two_block_convergence.png" alt="Half-step convergence and teacher recovery">
 </div>
