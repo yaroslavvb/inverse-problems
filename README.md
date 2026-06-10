@@ -5,6 +5,7 @@
 
 ```
 uv run linattention_solve.py
+uv run linattention_diagnose_adam.py
 uv run altprop_linattention.py
 uv run linattention_visualize.py
 ```
@@ -15,6 +16,11 @@ random orthogonal teacher and student matrices. Defaults are `dim=32` and
 including gauge-fixed methods that optimize the identifiable product
 `W_q W_k.T` directly. It stops each method after a 100x eval-loss reduction and
 writes a loss curve to `reports/single_layer_linattention_loss.png`.
+
+`linattention_diagnose_adam.py` explains the S-shaped plain-Adam curve. Early
+Adam mostly shrinks the random student's output toward zero, which lowers loss
+until it reaches the zero-predictor baseline. The faster middle segment begins
+once the score product and value matrix start aligning with the teacher.
 
 `altprop_linattention.py` contains the older multi-layer backprop-vs-altprop
 comparison used by `linattention_visualize.py`.
