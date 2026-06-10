@@ -19,8 +19,8 @@ from matplotlib.ticker import MaxNLocator
 # Ensure reports directory exists
 os.makedirs("reports", exist_ok=True)
 
-# Import core simulation from linattention_solve
-from linattention_solve import (
+# Import core simulation from altprop_linattention
+from altprop_linattention import (
     NUM_LAYERS,
     LOSS_REDUCTION_FACTOR,
     MultiLayerSelfAttention,

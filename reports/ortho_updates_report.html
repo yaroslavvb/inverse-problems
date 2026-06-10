@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orthogonality-Exploiting Updates — Linear Attention Student/Teacher</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Plus+Jakarta+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: rgba(22, 30, 49, 0.7);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --text-color: #f3f4f6;
+            --text-muted: #9ca3af;
+            --accent-primary: #3b82f6;
+            --accent-secondary: #ff7f0e;
+            --accent-success: #10b981;
+            --accent-warn: #f59e0b;
+            --glow-color: rgba(59, 130, 246, 0.15);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background-color: var(--bg-color);
+            background-image:
+                radial-gradient(at 10% 20%, rgba(59, 130, 246, 0.1) 0px, transparent 50%),
+                radial-gradient(at 90% 80%, rgba(16, 185, 129, 0.05) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: var(--text-color);
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            min-height: 100vh;
+            padding: 2rem;
+            line-height: 1.55;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        header { margin-bottom: 2.5rem; border-bottom: 1px solid var(--card-border); padding-bottom: 1.5rem; }
+        h1 { font-family: 'Outfit', sans-serif; font-size: 2.2rem; font-weight: 800; }
+        .subtitle { color: var(--text-muted); margin-top: 0.5rem; max-width: 70rem; }
+        h2 { font-family: 'Outfit', sans-serif; font-size: 1.5rem; font-weight: 600; margin: 2.5rem 0 1rem; color: var(--accent-primary); }
+        h3 { font-family: 'Outfit', sans-serif; font-size: 1.1rem; font-weight: 600; margin: 1.5rem 0 0.5rem; }
+        p { margin: 0.6rem 0; color: var(--text-color); }
+        .muted { color: var(--text-muted); }
+        .card {
+            background: var(--card-bg); border: 1px solid var(--card-border);
+            border-radius: 12px; padding: 1.25rem 1.5rem; margin: 1rem 0;
+        }
+        .tldr-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin: 1rem 0; }
+        .tldr-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 1.1rem 1.25rem; }
+        .tldr-card .big { font-family: 'Outfit', sans-serif; font-size: 1.9rem; font-weight: 800; color: var(--accent-success); }
+        .tldr-card .label { color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem; }
+        table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.86rem; }
+        th, td { border: 1px solid var(--card-border); padding: 0.45rem 0.6rem; text-align: left; }
+        th { background: rgba(59, 130, 246, 0.12); font-weight: 600; }
+        tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+        td.num { text-align: right; font-variant-numeric: tabular-nums; }
+        code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85em;
+            background: rgba(255,255,255,0.06); border-radius: 4px; padding: 0.1em 0.35em; }
+        pre { background: rgba(0,0,0,0.45); border: 1px solid var(--card-border); border-radius: 8px;
+            padding: 1rem; overflow-x: auto; font-size: 0.82rem; margin: 0.75rem 0; }
+        pre code { background: none; padding: 0; }
+        img.plot { width: 100%; border-radius: 10px; border: 1px solid var(--card-border); margin: 0.75rem 0; background: #fff; }
+        .finding { border-left: 3px solid var(--accent-primary); padding-left: 1rem; margin: 1.25rem 0; }
+        .finding.warn { border-left-color: var(--accent-warn); }
+        .badge { display: inline-block; font-size: 0.72rem; padding: 0.12rem 0.5rem; border-radius: 999px;
+            background: rgba(16,185,129,0.15); color: var(--accent-success); border: 1px solid rgba(16,185,129,0.4); margin-left: 0.4rem; vertical-align: middle;}
+        .badge.fail { background: rgba(245,158,11,0.12); color: var(--accent-warn); border-color: rgba(245,158,11,0.4); }
+        ul, ol { margin: 0.5rem 0 0.5rem 1.5rem; }
+        li { margin: 0.3rem 0; }
+        footer { margin-top: 3rem; border-top: 1px solid var(--card-border); padding-top: 1.25rem; color: var(--text-muted); font-size: 0.85rem; }
+        a { color: var(--accent-primary); }
+    </style>
+</head>
+<body>
+<div class="container">
+
+<header>
+    <h1>Orthogonality-Exploiting Updates</h1>
+    <p class="subtitle">
+        Single-layer linear attention student/teacher (D=32, N=8). Teacher and student weights
+        W<sub>q</sub>, W<sub>k</sub>, W<sub>v</sub> are random <b>orthogonal</b> matrices, so the solution lies on
+        O(32)<sup>3</sup>. We compare 13 update rules that exploit that structure — multiplicative rotation
+        updates, Lie-algebra optimizers, retractions, landing, soft penalties, and closed-form Procrustes
+        solvers — against Euclidean SGD/Adam, with per-method learning-rate sweeps, identical inits and
+        data streams, float64, three seeds. Experiment: <code>ortho_updates.py</code> (June 2026).
+    </p>
+</header>
+
+<div class="tldr-grid">
+    <div class="tldr-card">
+        <div class="big">10 alternations</div>
+        <div class="label">two-block exact solver (Procrustes + least-squares) reaches 8.6e-18 MSE —
+        vs 338 gradient steps for Adam. Exploiting <i>bilinearity</i> is worth far more than exploiting the manifold.</div>
+    </div>
+    <div class="tldr-card">
+        <div class="big">121 vs 338</div>
+        <div class="label">steps to 1e-12: hybrid update (closed-form W<sub>v</sub> + rotation steps for W<sub>q</sub>, W<sub>k</sub>)
+        vs the Adam baseline — a 2.8x speedup from one closed-form block.</div>
+    </div>
+    <div class="tldr-card">
+        <div class="big">3/4 of inits</div>
+        <div class="label">cannot reach the teacher under any det-preserving manifold update — a
+        topological obstruction (determinant components of O(n)), not a tuning problem. Euclidean methods tunnel through.</div>
+    </div>
+    <div class="tldr-card">
+        <div class="big">~1e-13 vs ~1</div>
+        <div class="label">final ||W<sup>T</sup>W−I||: manifold methods return an exactly-orthogonal solution;
+        Adam's solution settles ~1.0 off the manifold (transient drift up to 4.5) — yet still recovers the teacher up to gauge.</div>
+    </div>
+</div>
+
+<h2>1. Setup</h2>
+<div class="card">
+    <p>
+        Model (per <code>linattention_solve.py</code>): <code>Q,K,V = X@W_q, X@W_k, X@W_v</code>,
+        causal mixing <code>out = einsum("bnd,bnde->bne", Q, cumsum(einsum("bnd,bne->bnde", K, V), 1))</code>.
+        Fresh row-orthogonal batches (B=32) each step; loss is MSE against a frozen teacher; eval on a fixed
+        held-out set of 128 sequences. Plain Adam (lr 1e-2) is the baseline from the previous experiment.
+    </p>
+    <p>
+        <b>Key structure.</b> The map depends on the weights only through <b>(A, W<sub>v</sub>)</b> with
+        <b>A = W<sub>q</sub>W<sub>k</sub><sup>T</sup></b>; it is <i>bilinear</i> in (A, W<sub>v</sub>). Two exact symmetries follow:
+        the gauge orbit (W<sub>q</sub>R, W<sub>k</sub>R) for any orthogonal R, and the scale gauge
+        (cA, W<sub>v</sub>/c) for any c≠0 (only c=±1 stays on the manifold). All "distance to teacher" numbers
+        below quotient these gauges out.
+    </p>
+    <p>
+        <b>Conventions</b> (each verified numerically by <code>ortho_updates.py --verify</code>):
+        skew(M)=(M−M<sup>T</sup>)/2; Riemannian gradient Ω=skew(W<sup>T</sup>G) pairs with <i>right</i>
+        multiplication W←W·expm(−lr·Ω), giving descent ⟨G,ΔW⟩=−lr‖Ω‖²; the mismatched pairing silently fails
+        (negative control included). Landing uses the left form skew(GW<sup>T</sup>)W, which stays exactly
+        orthogonal to its manifold-pull term for all W, on or off the manifold.
+    </p>
+    <p class="muted">
+        Protocol: float64 everywhere (the 1e-15 regime is below float32 resolution); every (method, lr) run sees
+        the same init and the same data stream; LR grids are uniform half-decade logspace; landing/penalty/decoupled
+        also sweep their pull coefficient jointly with lr; headline metric is steps to eval MSE ≤ 1e-12;
+        best configs re-run on seeds 43 and 44.
+    </p>
+</div>
+
+<h2>2. Results</h2>
+
+<table>
+    <thead>
+    <tr>
+        <th>method</th>
+        <th>update rule (per W, G = ∂L/∂W, Ω = skew(W<sup>T</sup>G))</th>
+        <th>best config</th>
+        <th class="num">steps to 1e-12<br>(seeds 42 / 43 / 44)</th>
+        <th class="num">final ‖W<sup>T</sup>W−I‖</th>
+        <th class="num">teacher dist<br>(gauge-quotiented)</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr><td><b>two_block_exact</b> <span class="badge">solver</span></td>
+        <td>alternate: W<sub>v</sub> ← polar(M<sup>T</sup>Y) (Procrustes); A ← polar(lstsq(Φ, vec Y)); W<sub>q</sub> ← A·W<sub>k</sub></td>
+        <td>B=64, no lr</td><td class="num"><b>10 alternations</b></td><td class="num">1e-14</td><td class="num">2.5e-7</td></tr>
+    <tr><td><b>procrustes_alt</b></td>
+        <td>expm steps on W<sub>q</sub>, W<sub>k</sub>; closed-form Procrustes W<sub>v</sub> ← polar(M<sup>T</sup>Y) each step</td>
+        <td>lr 316</td><td class="num"><b>121 / 100 / 119</b></td><td class="num">3e-13</td><td class="num">9.4e-7</td></tr>
+    <tr><td>sgd</td><td>W ← W − lr·G</td>
+        <td>lr 316</td><td class="num">221 / 185 / 218</td><td class="num">3.9 transient → 8e-2</td><td class="num">8.8e-7</td></tr>
+    <tr><td>landing</td><td>W ← W − lr·skew(GW<sup>T</sup>)W − γ·W(W<sup>T</sup>W−I)</td>
+        <td>lr 316, γ 0.1</td><td class="num">244 / 218 / 235</td><td class="num">8e-2 transient → 1e-13</td><td class="num">8.6e-7</td></tr>
+    <tr><td>exp_sgd</td><td>W ← W·expm(−lr·Ω)</td>
+        <td>lr 316</td><td class="num">246 / 219 / 236</td><td class="num">3e-13</td><td class="num">8.6e-7</td></tr>
+    <tr><td>cayley_sgd</td><td>W ← W·(I+lr·Ω/2)<sup>−1</sup>(I−lr·Ω/2)</td>
+        <td>lr 316</td><td class="num">246 / 220 / 236</td><td class="num">2e-13</td><td class="num">8.6e-7</td></tr>
+    <tr><td>qr_retraction</td><td>W ← qf(W − lr·WΩ)</td>
+        <td>lr 316</td><td class="num">246 / 220 / 236</td><td class="num">4e-15</td><td class="num">8.8e-7</td></tr>
+    <tr><td>polar_retraction</td><td>W ← polar(W − lr·WΩ)</td>
+        <td>lr 316</td><td class="num">246 / 220 / 236</td><td class="num">2e-14</td><td class="num">8.7e-7</td></tr>
+    <tr><td>exp_momentum</td><td>M ← 0.9M+Ω; W ← W·expm(−clip(lr·M, θ≤0.3))</td>
+        <td>lr 100</td><td class="num">290 / 304 / 288</td><td class="num">4e-13</td><td class="num">8.0e-7</td></tr>
+    <tr><td>adam_decoupled_orth</td><td>Adam on G, then W ← W − γ·W(W<sup>T</sup>W−I) outside Adam</td>
+        <td>lr 0.01, γ 0.03</td><td class="num">290 / 260 / 293</td><td class="num">3.6 transient → 4e-7</td><td class="num">8.0e-7</td></tr>
+    <tr><td>so_adam</td><td>Adam moments on Ω in so(n); W ← W·expm(−lr·m̂/(√v̂+ε))</td>
+        <td>lr 0.0316</td><td class="num">310 / 316 / 309</td><td class="num">2e-13</td><td class="num">8.5e-7</td></tr>
+    <tr><td>triv_adam</td><td>W = W<sub>0</sub>·expm(skew(A)), Adam on A, dynamic rebase at ‖·‖=0.7</td>
+        <td>lr 0.0316</td><td class="num">314 / 312 / 311</td><td class="num">5e-14</td><td class="num">8.3e-7</td></tr>
+    <tr><td>penalty_adam <span class="badge fail">fragile</span></td><td>Adam on loss + μ·Σ‖W<sup>T</sup>W−I‖²</td>
+        <td>lr 0.1, μ 1e-3</td><td class="num">322 / fail / fail</td><td class="num">3.5 transient</td><td class="num">8.5e-7</td></tr>
+    <tr><td><b>adam</b> (baseline)</td><td>plain Adam on raw entries</td>
+        <td>lr 0.01</td><td class="num">338 / 319 / 362</td><td class="num">4.5 transient → 1.0</td><td class="num">8.2e-7</td></tr>
+    <tr><td>muon_polar <span class="badge fail">orbits</span></td><td>M ← 0.9M+G; W ← polar(W − lr·polar(M))</td>
+        <td>lr 0.0316</td><td class="num">never (floor 3.6e-5)</td><td class="num">2e-14</td><td class="num">0.51</td></tr>
+    </tbody>
+</table>
+<p class="muted">All entries: det-aligned init, best LR from the sweep, 800-step budget. "fail" for penalty_adam
+means its seed-42-tuned (lr, μ) did not reach 1e-12 on seeds 43/44 (floors at ~5e-4 / 9e-4). Unaligned-init
+results are in §4. Full per-LR tables: <code>ortho_updates_results.json</code>.</p>
+
+<img class="plot" src="ortho_loss_curves.png" alt="Best-LR eval loss curves per method">
+
+<h2>3. Finding 1 — problem structure beats manifold structure</h2>
+<div class="finding">
+    <p>
+        The two biggest wins don't come from Riemannian machinery; they come from the map being
+        <b>bilinear in (A, W<sub>v</sub>)</b>:
+    </p>
+    <ul>
+        <li><b>two_block_exact</b> (a solver, not an optimizer): with W<sub>q</sub>, W<sub>k</sub> fixed the output is linear
+            in W<sub>v</sub> and orthogonality makes the subproblem an <i>orthogonal Procrustes</i> problem with the closed form
+            W<sub>v</sub> = polar(M<sup>T</sup>Y); with W<sub>v</sub> fixed it is linear in A, solved by least squares + polar
+            projection. Ten alternations on fresh 64-sequence batches reach 8.6e-18 — and it crosses determinant
+            components freely (polar projections are not det-preserving), so it needs no init alignment at all.</li>
+        <li><b>procrustes_alt</b>, the same idea as an online update (closed-form W<sub>v</sub> each step, rotation steps for
+            W<sub>q</sub>, W<sub>k</sub>), is the fastest gradient-style method at <b>121 / 100 / 119</b> steps — 2.8x faster than Adam
+            and 2x faster than any generic manifold method.</li>
+    </ul>
+    <p class="muted">
+        The orthogonality of W<sub>v</sub> is exactly what makes the closed form possible: for square orthogonal W,
+        ‖MW‖<sub>F</sub> is constant, so min‖MW−Y‖ reduces to a trace maximization solved by the polar factor.
+    </p>
+</div>
+
+<h3>Finding 2 — multiplicative updates beat Adam, but so does plain SGD</h3>
+<div class="finding">
+    <p>
+        The whole multiplicative/retraction family — expm, Cayley, QR, polar, landing — lands in a tight cluster
+        (<b>244–246</b> steps, identical across retractions to within a step) and beats Adam (338) by ~27%.
+        The four retractions are numerically interchangeable here; pick the cheapest.
+        But plain SGD at lr=316 reaches 1e-12 in <b>221</b> steps without any manifold machinery.
+        On a noiseless, realizable, well-conditioned task, the on-manifold gradient direction is nearly identical to
+        the raw gradient (the symmetric component the projection removes is small), so the projection buys exactness,
+        not speed. The honest conclusion: <b>on this task, generic manifold methods ≈ well-tuned SGD</b>.
+    </p>
+    <p>
+        What the rotation-aware optimizers do buy is <b>learning-rate robustness</b>: so_adam, triv_adam, and the
+        angle-clipped exp_momentum tolerate 3 grid points within 2x of their best (vs 1 for the SGD-shaped methods,
+        whose optimum sits sharply at lr≈316), because their step size is a rotation angle rather than a raw
+        gradient scale.
+    </p>
+</div>
+<img class="plot" src="ortho_lr_robustness.png" alt="Steps to 1e-12 vs learning rate">
+
+<h3>Finding 3 — the determinant obstruction: topology, not tuning</h3>
+<div class="finding warn">
+    <p>
+        O(n) has two connected components (det = ±1), and every multiplicative/retraction/trivialization update —
+        rotations all — preserves det(W). Zero loss requires det(W<sub>v</sub>) = det(W<sub>v</sub>*) and
+        det(W<sub>q</sub>)·det(W<sub>k</sub>) = det(W<sub>q</sub>*)·det(W<sub>k</sub>*); a random init satisfies both with
+        probability only 1/4. From an unaligned init <b>every det-preserving method floors at ~5–6e-4 at every learning
+        rate</b> (dashed curves below), while Euclidean SGD/Adam silently tunnel between components and converge anyway.
+        The fix is free: flip the sign of one column of W<sub>v</sub> (and of W<sub>q</sub>) at init to match the teacher's
+        det signs. Without this control, every manifold method in this comparison would have looked broken on 3 out of 4 seeds.
+    </p>
+</div>
+<img class="plot" src="ortho_det_obstruction.png" alt="Aligned vs unaligned init for det-preserving methods">
+
+<h3>Finding 4 — everyone recovers the teacher; only manifold methods recover it orthogonally</h3>
+<div class="finding">
+    <p>
+        Quotienting the exact model symmetries (gauge (W<sub>q</sub>R, W<sub>k</sub>R) and scale (cA, W<sub>v</sub>/c)),
+        <b>every converged method ends at distance ~8e-7 from the teacher</b> — including plain SGD and Adam.
+        The difference is <i>where</i> they end: manifold methods return weights with ‖W<sup>T</sup>W−I‖ ≈ 1e-13–1e-15,
+        while Adam's solution settles ~1.0 off the manifold (it absorbs the scale gauge, cA with c≈1.08, and
+        |c²−1|·√32 ≈ 1.0; its transient drift peaks at 4.5 around step 50) and SGD's ~0.08.
+        If the application needs the orthogonal factorization itself (e.g. for stability or interpretability),
+        manifold methods deliver it at no cost relative to the Adam baseline (and an 8–18% step cost relative to
+        the sharply-tuned SGD); if only the function matters, they buy nothing here.
+        (Naively measuring per-matrix distance without the scale gauge had suggested Adam "fails to recover the teacher"
+        at distance 0.59 — that was entirely a gauge artifact, caught during verification.)
+    </p>
+</div>
+<img class="plot" src="ortho_drift.png" alt="Orthogonality drift per method">
+
+<h3>Finding 5 — failure-mode catalog (all reproducible)</h3>
+<div class="finding warn">
+    <ul>
+        <li><b>Coupled landing fails at every lr.</b> The published form W ← W − lr·(descent + λ·pull) with λ=1
+            needs lr·λ ≲ 1 for the pull dynamics but lr ≈ 300 for the descent term (raw gradient scale here is ~2e-3) —
+            irreconcilable with one lr knob. Decoupling the pull stepsize (γ=0.1, not scaled by lr) turns total failure
+            into 244 steps, tied with the best manifold methods. Same lesson as decoupled weight decay.</li>
+        <li><b>Penalty methods are dominated.</b> At μ=1.0 (caught during implementation verification, before the
+            final sweep) the penalty gradient exceeds the data gradient by 2–4 orders of magnitude and Adam never
+            leaves the init plateau; even μ=0.1 stalls at every lr in the recorded sweep. μ=1e-3 works on the tuning
+            seed (322 steps) but the same (lr, μ) fails on both held-out seeds. The decoupled pull
+            (adam_decoupled_orth, 290/260/293, det-trap-immune) strictly dominates the coupled penalty.</li>
+        <li><b>Gradient-normalized updates orbit.</b> muon_polar's direction polar(M) has constant norm √D regardless
+            of gradient magnitude, so with constant lr it dithers at an MSE floor ∝ lr² (measured floor/lr² ≈ 0.04–0.09
+            across its converged lrs; best floor 3.6e-5 at lr 0.0316) instead of converging — on a noiseless task,
+            msign-style updates need a trust region or lr decay.</li>
+        <li><b>Mismatched convention = silent failure.</b> skew(W<sup>T</sup>G) pairs only with right multiplication;
+            the cross pairing passes every orthogonality test and does not descend. The harness's
+            <code>--verify</code> mode checks the descent identity, slope, a negative control, the landing
+            decomposition, an orthogonality soak, and a block-A unit test before any sweep.</li>
+    </ul>
+</div>
+
+<h2>4. Unaligned-init results (the floor)</h2>
+<table>
+    <thead><tr><th>method</th><th class="num">steps to 1e-12 (unaligned)</th><th class="num">final loss</th><th>component crossing</th></tr></thead>
+    <tbody>
+    <tr><td>sgd / adam</td><td class="num">265 / 342</td><td class="num">~9e-17</td><td>tunnels off-manifold</td></tr>
+    <tr><td>penalty_adam / adam_decoupled_orth</td><td class="num">457 / 295</td><td class="num">~1e-16</td><td>tunnels (soft constraint)</td></tr>
+    <tr><td>two_block_exact</td><td class="num">10 alternations</td><td class="num">8.6e-18</td><td>polar projection crosses dets</td></tr>
+    <tr><td>exp_sgd, cayley, qr, polar, exp_momentum, so_adam, triv_adam, landing, procrustes_alt</td>
+        <td class="num">never</td><td class="num">5.3e-4 – 6.1e-4</td><td>blocked (det-preserving)</td></tr>
+    </tbody>
+</table>
+<p class="muted">procrustes_alt's W<sub>v</sub> polar step does cross components, but its W<sub>q</sub>/W<sub>k</sub>
+rotation steps preserve the det product, which is what this seed's unaligned init violates — its floor probability over
+random seeds is 1/2 rather than the family's 3/4.</p>
+
+<h2>5. Reproduce</h2>
+<div class="card">
+<pre><code>uv run ortho_updates.py --verify   # 8 pre-flight math checks (descent identity, negative control, ...)
+uv run ortho_updates.py --smoke    # 50-step smoke test of all methods
+uv run ortho_updates.py            # full sweep (~25 min CPU): both arms, 3 seeds, plots + JSON</code></pre>
+<p class="muted">
+    Artifacts: <code>ortho_loss_curves.png</code>, <code>ortho_lr_robustness.png</code>, <code>ortho_drift.png</code>,
+    <code>ortho_det_obstruction.png</code>, <code>ortho_updates_results.json</code> (per-LR tables and full curves).
+    Methodology: every run shares the same teacher, init, eval set, and data stream; only the update rule and its
+    hyperparameters differ. Design and implementation were cross-checked by independent review passes; the landing
+    coupling bug, the penalty μ scale, and the scale-gauge artifact in the distance metric were all caught that way
+    and fixed before this report's numbers were produced.
+</p>
+</div>
+
+<h2>6. References</h2>
+<div class="card">
+<ul>
+    <li>Ablin &amp; Peyré, <i>Fast and accurate optimization on the orthogonal manifold without retraction</i>, AISTATS 2022 — the landing method.</li>
+    <li>Li, Fuxin, Todorovic, <i>Efficient Riemannian Optimization on the Stiefel Manifold via the Cayley Transform</i>, ICLR 2020 — Cayley SGD/Adam.</li>
+    <li>Lezcano-Casado, <i>Trivializations for gradient-based optimization on manifolds</i>, NeurIPS 2019 — W = W₀·expm(A), dynamic rebasing.</li>
+    <li>Bécigneul &amp; Ganea, <i>Riemannian Adaptive Optimization Methods</i>, ICLR 2019 — manifold Adam variants.</li>
+    <li>Jordan et al., <i>Muon</i>, 2024; Bernstein &amp; Newhouse, <i>Old Optimizer, New Norm</i>, 2024 — msign/spectral descent.</li>
+    <li>Wisdom et al., <i>Full-Capacity Unitary RNNs</i>, NeurIPS 2016 — multiplicative Cayley updates for unitary recurrences.</li>
+    <li>Schönemann 1966 — the orthogonal Procrustes closed form used in both Procrustes methods.</li>
+</ul>
+</div>
+
+<footer>
+    Experiment 09jun26 · <code>ortho_updates.py</code> · single-layer linear attention, D=32, float64 ·
+    companion to the <a href="linattention_report.html">backprop-alternative report</a>.
+</footer>
+
+</div>
+</body>
+</html>
