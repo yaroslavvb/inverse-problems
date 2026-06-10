@@ -5,8 +5,19 @@
 
 ```
 uv run linattention_solve.py
+uv run altprop_linattention.py
 uv run linattention_visualize.py
 ```
+
+`linattention_solve.py` is now the single-layer student/teacher prototype with
+random orthogonal teacher and student matrices. Defaults are `dim=32` and
+`batch_size=16`. It compares plain Adam with several orthogonality-aware updates,
+including gauge-fixed methods that optimize the identifiable product
+`W_q W_k.T` directly. It stops each method after a 100x eval-loss reduction and
+writes a loss curve to `reports/single_layer_linattention_loss.png`.
+
+`altprop_linattention.py` contains the older multi-layer backprop-vs-altprop
+comparison used by `linattention_visualize.py`.
 
 
 ## Easy problem
