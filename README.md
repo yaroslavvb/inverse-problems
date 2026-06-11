@@ -67,4 +67,6 @@ uv run ortho_updates.py             # full comparison sweep
   beats every geometric constraint by 100x, and average-case (Frobenius/Fisher) anchors beat the worst-case
   spectral family; Tilde's compositional Muon keeps the layer's composed forgetting budget from factor access
   (realizing 0.199 of a 0.200 budget vs 2.4x overshoot for naive per-factor Muon) and edges out the rest of the
-  spectral family
+  spectral family; rerun on real pre-trained pythia-14m head circuits (`uv run forgetting_pretrained.py` —
+  teacher and student are actual heads, factor conditions 68/28, imbalance 4.9x), compositional Muon wins
+  outright on every seed and naive factored Muon overshoots the composed budget 3.1x

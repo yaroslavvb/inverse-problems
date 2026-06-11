@@ -206,8 +206,8 @@ def _factored_round(state, Xb, Yb, mem, eta, compositional):
     partner's spectral norm when factors are unbalanced."""
     Wq, Wk = _factored_init(state, mem)
     Wv = state["Wv"]
-    I = torch.eye(DIM)
-    M = {k: torch.zeros(DIM, DIM) for k in ("q", "k", "v")}
+    I_g = torch.eye(Wk.shape[1])      # Gram space = factor inner dim (head_dim for tall factors)
+    M = {"q": torch.zeros_like(Wq), "k": torch.zeros_like(Wk), "v": torch.zeros_like(Wv)}
     for _ in range(INNER_STEPS):
         loss = mse(forward(Xb, Wq @ Wk.T, Wv), Yb)
         gq, gk, gv = torch.autograd.grad(loss, [Wq, Wk, Wv])
@@ -216,8 +216,8 @@ def _factored_round(state, Xb, Yb, mem, eta, compositional):
             M["k"] = 0.9 * M["k"] + gk
             M["v"] = 0.9 * M["v"] + gv
             if compositional:
-                Ck_inv = eigh_inv_sqrt(Wk.T @ Wk + CM_DAMPING * I)
-                Cq_inv = eigh_inv_sqrt(Wq.T @ Wq + CM_DAMPING * I)
+                Ck_inv = eigh_inv_sqrt(Wk.T @ Wk + CM_DAMPING * I_g)
+                Cq_inv = eigh_inv_sqrt(Wq.T @ Wq + CM_DAMPING * I_g)
                 Wq.sub_((eta / 2) * msign_safe(M["q"] @ Ck_inv) @ Ck_inv)
                 Wk.sub_((eta / 2) * msign_safe(M["k"] @ Cq_inv) @ Cq_inv)
             else:

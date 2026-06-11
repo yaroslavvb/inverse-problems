@@ -376,19 +376,86 @@ knob values; init eval loss 8.7e-3. Full per-config tables: <code>forgetting_res
     </ul>
 </div>
 
-<h2>7. Reproduce</h2>
+<h2>7. Real pre-trained circuits (Pythia-14m)</h2>
 <div class="card">
-<pre><code>uv run forgetting_lab.py --verify   # bound + projector + parameterization + composed-budget checks
-uv run forgetting_lab.py --smoke    # one run per method, serial
-uv run forgetting_lab.py            # full 135-run sweep, parallel (~6 s on 16 cores)</code></pre>
+    <p>
+        Everything above used random orthogonal teachers. This section reruns the experiment on <b>real
+        pre-trained attention circuits</b>: the teacher is head 0 of layer 1 of
+        <a href="https://huggingface.co/EleutherAI/pythia-14m">EleutherAI/pythia-14m</a>
+        (A* = W<sub>Q</sub>W<sub>K</sub><sup>T</sup>/√d<sub>h</sub>, the QK circuit, and
+        W<sub>v</sub>* = W<sub>V</sub>W<sub>O</sub>, the full OV circuit — both 128×128 of rank 32), and the student
+        is initialized from a <i>different</i> real head (layer 4, head 2), so the streaming task reads:
+        <b>adapt one pre-trained head toward another head's function without forgetting</b>.
+        The weights are transplanted into the linear-attention lab (no softmax, no rotary — we study the weight
+        geometry, not pythia's function), and both circuits are normalized by the teacher's spectral norms —
+        a units choice that preserves rank, spectrum shapes, factor imbalance, and the student/teacher relative
+        scale. The factored Muons get the student head's <b>real tall factors</b> (128×32): conditions 68 and 28,
+        mutually unbalanced by 4.9x — no synthetic gauge needed; this is the regime compositional Muon targets.
+        Each round is now 16x underdetermined (2048 equations vs 32768 parameters; was 4x), and the inner Adam lr
+        is 1e-3 (circuit entries are ~8x smaller than the random lab's at matched spectral norm).
+    </p>
+    <table>
+        <thead><tr><th>method</th><th>best knob</th><th class="num">final eval MSE</th>
+            <th class="num">forgetting (past MSE, last 10 rounds)</th><th class="num">fit (mean batch MSE)</th></tr></thead>
+        <tbody>
+        <tr><td><b>comp_muon</b> (Tilde)</td><td>η 0.01</td><td class="num"><b>1.51e-6</b></td><td class="num">9.8e-7</td><td class="num">4.7e-7</td></tr>
+        <tr><td>muon</td><td>η 0.01</td><td class="num">1.70e-6</td><td class="num">1.3e-6</td><td class="num">4.3e-7</td></tr>
+        <tr><td>func_anchor</td><td>λ 10</td><td class="num">1.75e-6</td><td class="num">1.6e-6</td><td class="num">1.8e-6</td></tr>
+        <tr><td>factored_muon</td><td>η 0.01</td><td class="num">1.85e-6</td><td class="num">1.2e-6</td><td class="num">5.9e-7</td></tr>
+        <tr><td><b>replay</b></td><td>cap 1000 (all)</td><td class="num">1.96e-6</td><td class="num"><b>3.6e-7</b></td><td class="num">6.5e-7</td></tr>
+        <tr><td>spec_clip</td><td>τ 0.1</td><td class="num">2.01e-6</td><td class="num">1.2e-6</td><td class="num">1.1e-6</td></tr>
+        <tr><td>ewc</td><td>λ 0.1</td><td class="num">2.10e-6</td><td class="num">9.3e-7</td><td class="num">3.6e-7</td></tr>
+        <tr><td>naive</td><td>lr 0.001</td><td class="num">2.17e-6</td><td class="num">1.1e-6</td><td class="num">3.5e-7</td></tr>
+        <tr><td>frob_anchor</td><td>λ 1</td><td class="num">2.44e-6</td><td class="num">1.6e-6</td><td class="num">1.6e-6</td></tr>
+        </tbody>
+    </table>
+    <p class="muted">Init eval loss 2.82e-6; geometric mean over 3 data-stream seeds (the pre-trained weights are
+    fixed — "that particular value"). null_proj is omitted: its basis operations scale with D² = 16384 and break
+    the &lt;1s budget, and it was the structural loser at D=32. 126 runs, 8.5&thinsp;s wall-clock on 16 workers,
+    median run 0.56&thinsp;s (the eigh-heavy Muon family runs over budget at D=128: comp/factored ~1.2–1.3&thinsp;s,
+    muon-on-A ~1.8&thinsp;s).</p>
+    <img class="plot" src="forgetting_pretrained_curves.png" alt="Streaming adaptation between two real pythia heads">
+    <h3>What changes with real weights</h3>
+    <ul>
+        <li><b>Compositional Muon wins outright, on every seed.</b> The per-seed ordering is strict:
+            comp_muon (1.48/1.47/1.60e-6) &lt; muon-on-A (1.70/1.65/1.73e-6) &lt; factored_muon (1.81/1.81/1.92e-6).
+            With the head's genuinely unbalanced factors, naive per-factor msign overshoots the composed forgetting
+            budget <b>3.1x</b> (vs 2.4x with the synthetic gauge; <code>--verify</code> check 4), and the whitened rule
+            now beats even white-box msign on A — the factored rank-32 parameterization matches the teacher's
+            rank-32 circuit class, and the partner-whitening is what converts that into better error
+            (factored_muon shares the parameterization and still loses).</li>
+        <li><b>The budget puts this in the early-phase regime, and the leaderboard reshuffles accordingly.</b>
+            At 16x per-round underdetermination nothing comes close to solving in 40 rounds (best: 1.9x below the
+            init loss; every curve still descending). As in the random study's first-100x analysis
+            (<a href="ortho_updates_report.html">main report, Finding 5</a>), adaptive/spectral methods front-load
+            progress; replay's identifiability advantage needs more rounds to compound — but it still owns
+            forgetting by 2.6x over the next-best method (3.6e-7) and its eval curve has the steepest late slope,
+            so longer horizons should restore its dominance.</li>
+        <li><b>The regularizer's geometry must match the weights' geometry.</b> frob_anchor — the best geometric
+            method on isotropic random teachers — is last here: an isotropic parameter-space anchor charges all
+            16384 directions of A equally while the real target lives in a rank-32 anisotropic subspace.
+            Function-space anchoring (func_anchor, worst-but-one in the random study) jumps to third for the same
+            reason: it charges function change directly and is indifferent to how anisotropic the parameterization is.</li>
+    </ul>
+</div>
+
+<h2>8. Reproduce</h2>
+<div class="card">
+<pre><code>uv run forgetting_lab.py --verify          # bound + projector + parameterization + composed-budget checks
+uv run forgetting_lab.py --smoke           # one run per method, serial
+uv run forgetting_lab.py                   # full 135-run sweep, parallel (~6 s on 16 cores)
+uv run forgetting_pretrained.py --verify   # pythia-14m circuit spectra + composed-budget checks
+uv run forgetting_pretrained.py            # section-7 sweep on real circuits (126 runs, ~9 s)</code></pre>
 <p class="muted">
     Artifacts: <code>forgetting_eval_curves.png</code>, <code>forgetting_dynamics.png</code>,
     <code>forgetting_strength.png</code>, <code>forgetting_tradeoff.png</code>,
-    <code>forgetting_results.json</code> (all per-config curves and summaries).
+    <code>forgetting_results.json</code>; pre-trained variant:
+    <code>forgetting_pretrained_curves.png</code>, <code>forgetting_pretrained_strength.png</code>,
+    <code>forgetting_pretrained_results.json</code>, <code>pythia_circuits.pt</code> (cached circuits).
 </p>
 </div>
 
-<h2>8. References</h2>
+<h2>9. References</h2>
 <div class="card">
 <ul>
     <li>Jordan et al., <i>Muon</i>, 2024; Bernstein &amp; Newhouse, <i>Old Optimizer, New Norm</i>, 2024 — msign as steepest descent in spectral norm.</li>
