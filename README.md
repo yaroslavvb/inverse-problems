@@ -70,3 +70,29 @@ uv run ortho_updates.py             # full comparison sweep
   spectral family; rerun on real pre-trained pythia-14m head circuits (`uv run forgetting_pretrained.py` —
   teacher and student are actual heads, factor conditions 68/28, imbalance 4.9x), compositional Muon wins
   outright on every seed and naive factored Muon overshoots the composed budget 3.1x
+
+# Experiment 11jun26: is the QK circuit Zipf-distributed too?
+
+Empirical check of the associative-memory/Zipf premise behind Muon's advantage
+([Kim, Nichani, Wu, Bietti & Lee, arXiv:2603.26554](https://arxiv.org/abs/2603.26554)) on a real
+pre-trained transformer: does the KQ circuit of self-attention see the power-law association
+structure the paper's mechanism needs, the way the FFN plausibly does?
+
+```
+uv run zipf_qk_probe.py --smoke   # pipeline self-check (dL/dA vs autograd ~2e-6)
+uv run zipf_qk_probe.py           # full probe: GPT-2 on WikiText-2, trained + re-init, ~35s
+```
+
+## Observations
+[from report](https://yaroslavvb.github.io/inverse-problems/reports/zipf_qk_report.html)
+
+- **Yes, comparably to the FFN**: at trained weights the per-head QK-circuit gradients dL/dA are steeper
+  than content-destroyed shuffled-input nulls in 34-36 of 36 heads (median tail-slope gap -0.12,
+  vs -0.13..-0.19 for the FFN), and QK direction usage is more heavy-tailed than FFN neuron usage
+- Raw "Zipf-looking" gradient spectra are mostly input geometry — structureless nulls alone give
+  slope ~ -0.7 of the ~ -0.8; the mechanism-specific evidence is the true-vs-null gap
+- At random init the QK heavy tail is **positional, not content-based** (a position-preserving null
+  reproduces it), while the FFN shows content structure from the start — content-Zipf structure in
+  attention is built by training
+- Both circuits sit on strongly anisotropic inputs (the paper's Fig. 6 axis where Muon cedes ground
+  to Newton) — a caveat that applies to FFN and attention alike
