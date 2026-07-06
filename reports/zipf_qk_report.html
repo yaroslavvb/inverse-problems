@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Is the QK Circuit Zipf-Distributed Too?</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Plus+Jakarta+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: rgba(22, 30, 49, 0.7);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --text-color: #f3f4f6;
+            --text-muted: #9ca3af;
+            --accent-primary: #3b82f6;
+            --accent-success: #10b981;
+            --accent-warn: #f59e0b;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background-color: var(--bg-color);
+            background-image:
+                radial-gradient(at 10% 20%, rgba(59, 130, 246, 0.1) 0px, transparent 50%),
+                radial-gradient(at 90% 80%, rgba(16, 185, 129, 0.05) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: var(--text-color);
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            min-height: 100vh;
+            padding: 2rem;
+            line-height: 1.55;
+        }
+        .container { max-width: 1100px; margin: 0 auto; }
+        header { margin-bottom: 2.5rem; border-bottom: 1px solid var(--card-border); padding-bottom: 1.5rem; }
+        h1 { font-family: 'Outfit', sans-serif; font-size: 2.2rem; font-weight: 800; }
+        .subtitle { color: var(--text-muted); margin-top: 0.5rem; max-width: 65rem; }
+        h2 { font-family: 'Outfit', sans-serif; font-size: 1.5rem; font-weight: 600; margin: 2.5rem 0 1rem; color: var(--accent-primary); }
+        p { margin: 0.6rem 0; }
+        .muted { color: var(--text-muted); }
+        .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 1.25rem 1.5rem; margin: 1rem 0; }
+        .tldr-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin: 1rem 0; }
+        .tldr-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 1.1rem 1.25rem; }
+        .tldr-card .big { font-family: 'Outfit', sans-serif; font-size: 1.5rem; font-weight: 800; color: var(--accent-success); }
+        .tldr-card .label { color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem; }
+        table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.87rem; }
+        th, td { border: 1px solid var(--card-border); padding: 0.45rem 0.6rem; text-align: left; }
+        th { background: rgba(59, 130, 246, 0.12); font-weight: 600; }
+        tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+        td.num { text-align: right; font-variant-numeric: tabular-nums; }
+        code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85em;
+            background: rgba(255,255,255,0.06); border-radius: 4px; padding: 0.1em 0.35em; }
+        pre { background: rgba(0,0,0,0.45); border: 1px solid var(--card-border); border-radius: 8px;
+            padding: 1rem; overflow-x: auto; font-size: 0.82rem; margin: 0.75rem 0; }
+        pre code { background: none; padding: 0; }
+        img.plot { width: 100%; border-radius: 10px; border: 1px solid var(--card-border); margin: 0.75rem 0; background: #fff; }
+        .eq { background: rgba(0,0,0,0.3); border-left: 3px solid var(--accent-primary); border-radius: 6px;
+            padding: 0.75rem 1rem; margin: 0.75rem 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 0.9rem; overflow-x: auto; }
+        .finding { border-left: 3px solid var(--accent-primary); padding-left: 1rem; margin: 1.25rem 0; }
+        .finding.warn { border-left-color: var(--accent-warn); }
+        ul, ol { margin: 0.5rem 0 0.5rem 1.5rem; }
+        li { margin: 0.3rem 0; }
+        footer { margin-top: 3rem; border-top: 1px solid var(--card-border); padding-top: 1.25rem; color: var(--text-muted); font-size: 0.85rem; }
+        a { color: var(--accent-primary); }
+    </style>
+</head>
+<body>
+<div class="container">
+
+<header>
+    <h1>Is the QK Circuit Zipf-Distributed Too?</h1>
+    <p class="subtitle">
+        Kim, Nichani, Wu, Bietti &amp; Lee (<a href="https://arxiv.org/abs/2603.26554">arXiv:2603.26554</a>) show
+        Muon beats SGD at learning associative memories exactly when the stored associations have power-law
+        (Zipf) frequencies: the gradient is a frequency-weighted sum of rank-one associations
+        G ≈ Σᵢ pᵢuᵢvᵢᵀ whose heavy-tailed singular spectrum Muon's polar map amplifies.
+        Henry's question: <i>"I would expect that to sort of be the case for the FFN in a transformer, but would
+        that be the case for the KQ circuit of self-attention? not sure how to think of it there."</i>
+        This probe measures the Muon-relevant statistics on a real pre-trained transformer (GPT-2 124M,
+        WikiText-2) and compares the FFN and QK circuits directly. Probe: <code>zipf_qk_probe.py</code>.
+    </p>
+</header>
+
+<div class="tldr-grid">
+    <div class="tldr-card">
+        <div class="big">yes — comparably</div>
+        <div class="label">at trained weights, per-head QK-circuit gradients ∂L/∂A are steeper than
+        content-destroyed nulls in 34–36 of 36 heads (median gap −0.12); the FFN's gap is similar
+        (−0.13…−0.19). The associative heavy-tail structure is present in both circuits.</div>
+    </div>
+    <div class="tldr-card">
+        <div class="big">raw slopes ≈ geometry</div>
+        <div class="label">gradient tail slopes (−0.8…−1.0, near the corpus Zipf −0.90) are mostly reproduced
+        by structureless nulls (≈ −0.7) built from the same error signal with shuffled inputs — the
+        mechanism-specific evidence is the true-vs-null GAP, not the slope itself.</div>
+    </div>
+    <div class="tldr-card">
+        <div class="big">position first, content later</div>
+        <div class="label">at random init the QK gradient's structure is positional: a position-preserving null
+        nearly reproduces it (gap −0.04) while a time-shuffling null does not (−0.15). The FFN shows
+        content structure already at init. Content-Zipf structure in QK appears with training.</div>
+    </div>
+    <div class="tldr-card">
+        <div class="big">both sit on κ &gt; 0</div>
+        <div class="label">input second moments are strongly anisotropic for both circuits (tail slopes
+        −0.6…−1.1) — the paper's Fig. 6 axis on which Muon loses ground to Newton applies to FFN and
+        attention alike.</div>
+    </div>
+</div>
+
+<h2>1. What the paper's mechanism requires, and what we measured</h2>
+<div class="card">
+    <p>
+        In the paper's model, Muon's capacity advantage (d<sup>1+1/2α</sup> vs d<sup>1/2α</sup> stored facts)
+        comes from one structural property: the gradient of the recall loss is a sum of near-rank-one
+        associations weighted by power-law frequencies. The transformer-side question is whether the gradients
+        that Muon would actually precondition have that structure. We probe <b>GPT-2</b> (124M) because it has
+        no rotary embeddings, so each head's QK circuit is exactly one bilinear form
+        A<sub>h</sub> = W<sub>Q</sub><sup>h</sup>W<sub>K</sub><sup>hT</sup>/√d<sub>h</sub> — the associative-memory
+        matrix of attention in the Bietti et al. framing the paper builds on. Over ~49k tokens of WikiText-2 we
+        accumulate:
+    </p>
+    <ul>
+        <li><b>Gradient spectra</b> for every circuit's parameter matrices, plus the exact per-head
+            <b>∂L/∂A<sub>h</sub></b>, recovered from the attention-probability gradients via manual softmax
+            backward and verified against autograd through the identity
+            ∂L/∂W<sub>Q</sub><sup>h</sup> = (∂L/∂A<sub>h</sub>)W<sub>K</sub><sup>h</sup> (relative error 2e-6).
+            Measured at the trained weights and at a re-initialized copy (the paper's one-step-from-init setting).</li>
+        <li><b>Structureless nulls</b> — the key control. Each accumulated ∂L/∂A<sub>h</sub> gets two
+            same-pipeline baselines using the true error signal S̄ but shuffled inputs:
+            <b>permT</b> (fresh time-permutation of X per side: destroys content <i>and</i> position) and
+            <b>permB</b> (X swapped across batch rows at fixed positions: destroys content only).
+            The same controls are computed for the FFN input gradient ∂L/∂W<sub>in</sub> = X<sup>T</sup>Δ.
+            Any generic heavy-tailedness of activations and error signals survives the shuffle; only
+            input–error <i>association</i> structure is destroyed — precisely the paper's mechanism.</li>
+        <li><b>Usage frequencies</b> ("how often is each stored association exercised"): FFN neuron activation
+            energies E[a²] vs score energy through each singular direction of the trained A<sub>h</sub>
+            (each layer using its own input second moment).</li>
+        <li><b>Input second moments</b> per layer (the paper's embedding-anisotropy axis) and the corpus
+            unigram Zipf curve (slope −0.90) as reference.</li>
+    </ul>
+</div>
+
+<h2>2. Results</h2>
+<img class="plot" src="zipf_qk_spectra.png" alt="Gradient spectra, true-vs-null gaps, input second moments">
+<div class="card">
+    <table>
+        <thead><tr><th>circuit, setting</th><th class="num">tail slope (true)</th>
+            <th class="num">gap vs permT<br>(content+position null)</th>
+            <th class="num">gap vs permB<br>(content-only null)</th><th>reading</th></tr></thead>
+        <tbody>
+        <tr><td>QK ∂L/∂A, trained (36 heads)</td><td class="num">−0.82 median</td>
+            <td class="num">−0.12 (34/36 steeper)</td><td class="num">−0.12 (36/36 steeper)</td>
+            <td>genuine content-association structure</td></tr>
+        <tr><td>FFN ∂L/∂W<sub>in</sub>, trained (3 layers)</td><td class="num">−0.79 median</td>
+            <td class="num">−0.19 (3/3)</td><td class="num">−0.13 (3/3)</td>
+            <td>genuine, slightly larger vs permT</td></tr>
+        <tr><td>QK ∂L/∂A, init</td><td class="num">−1.01 median</td>
+            <td class="num">−0.15 (36/36)</td><td class="num"><b>−0.04</b> (36/36)</td>
+            <td>structure is mostly positional</td></tr>
+        <tr><td>FFN ∂L/∂W<sub>in</sub>, init</td><td class="num">−0.93 median</td>
+            <td class="num">−0.10 (3/3)</td><td class="num">−0.14 (3/3)</td>
+            <td>content structure present from the start</td></tr>
+        </tbody>
+    </table>
+    <p class="muted">Tail slope = log-log OLS slope of the normalized singular spectrum over ranks 8–256
+    (1.5 decades — it quantifies tail heaviness but cannot by itself distinguish a power law from e.g. a
+    lognormal). Gap = slope(true) − slope(null); negative means the real gradient's tail is steeper than a null
+    with identical error statistics and input marginals but destroyed input–error association.</p>
+</div>
+<img class="plot" src="zipf_qk_usage.png" alt="FFN neuron usage vs QK direction usage">
+<div class="card">
+    <p>
+        <b>Usage is heavy-tailed in both circuits — more so in QK.</b> Ranked FFN neuron energies decay with
+        slopes −0.30…−0.69 across layers; the score energy through the trained A<sub>h</sub>'s singular
+        directions decays with per-layer median slopes −1.00…−1.19 (per-head spread is wide, and layer-0
+        contains a distinctly steeper subpopulation consistent with positional heads). Attention does not
+        exercise its stored match-directions uniformly; it leans on a Zipf-like head of frequently-used
+        associations at least as strongly as the FFN leans on its frequently-fired neurons.
+    </p>
+</div>
+
+<h2>3. The answer to Henry's question</h2>
+<div class="finding">
+    <p>
+        <b>Empirically, yes: the KQ circuit sees the same kind of power-law association structure as the FFN —
+        at trained weights, to a comparable degree.</b> The per-head associative-memory gradients ∂L/∂A<sub>h</sub>
+        have heavy tails beyond what input geometry alone produces (steeper than the content-destroyed null in
+        34–36 of 36 heads), and the trained QK matrix's stored directions are exercised with strongly
+        skewed, Zipf-like frequencies. Whatever advantage the paper's mechanism confers on Muon for FFN-style
+        key–value memories should transfer to the QK matrices.
+    </p>
+    <p>
+        Two refinements matter, though. First, <b>most of the raw "Zipfiness" of gradient spectra is generic
+        geometry</b>: shuffled-input nulls with no association structure at all already produce tail slopes of
+        ≈ −0.7 on the same pipeline, so "the spectra look like the corpus Zipf curve" is weak evidence by
+        itself — the association-specific signal is the ~0.1–0.2 slope gap over the null, present for both
+        circuits. Second, <b>the two circuits arrive at their Zipf structure differently</b>. At random
+        initialization — the regime the paper's one-step analysis describes — the FFN gradient already carries
+        content-association structure, but the QK gradient's heavy tail is almost entirely positional (destroy
+        content while preserving position and the null reproduces it; gap −0.04). Content-based Zipf structure
+        in the QK circuit is something training builds. So for the earliest phase of training, the paper's
+        mechanism applies to attention through <i>positional</i> associations first, with the FFN-style
+        content-frequency story arriving later — a concrete, testable refinement of "Zipf's law motivates the
+        data model" for attention.
+    </p>
+    <p>
+        One shared caveat: both circuits' inputs are strongly anisotropic (second-moment tail slopes −0.6…−1.1),
+        which is the paper's Figure-6 axis (κ &gt; 0) on which Muon cedes ground to Newton's method. That caveat
+        applies to the FFN just as much as to attention, so it does not differentiate the two — but it does mean
+        neither circuit lives in the isotropic-embedding regime where Muon provably matches Newton.
+    </p>
+</div>
+
+<h2>4. Caveats</h2>
+<div class="card">
+    <ul>
+        <li>One model (GPT-2 124M), one corpus slice (~49k tokens of WikiText-2 validation). Absolute slope
+            values drift ~±0.2 with sample size and fit window; the paired true-vs-null gaps share the same
+            budget and are the robust statistic. The 1.5-decade fit window cannot distinguish power laws from
+            lognormal-like tails — read "tail slope", not "power-law exponent".</li>
+        <li>∂L/∂A<sub>h</sub> is the clean associative object; per-parameter W<sub>K</sub> gradient spectra
+            contain an exactly rank-one query-bias component (up to ~47% of the accumulated norm in some layer-0
+            heads) that does not affect tail fits but makes W<sub>Q</sub>/W<sub>K</sub> spectra asymmetric —
+            circuit-level claims here rest on ∂L/∂A<sub>h</sub>.</li>
+        <li>The usage metric factorizes E[(u·x)²(v·y)²] ≈ E[(u·x)²]E[(v·y)²] and ignores softmax saturation —
+            a rough exercise-frequency proxy, not an exact frequency; FFN neurons (3072 basis-aligned units) and
+            QK singular directions (64/head) are also different granularities.</li>
+        <li>"Second moments" are uncentered (the top eigenvalue is the corpus-mean direction); tail slopes are
+            unaffected.</li>
+        <li>Re-initialized GPT-2 on real text stands in for "early training"; the paper's setting also assumes
+            i.i.d. facts, while text gives correlated, structured batches.</li>
+    </ul>
+</div>
+
+<h2>5. Reproduce</h2>
+<div class="card">
+<pre><code>uv run zipf_qk_probe.py --smoke   # 2-batch pipeline check (self-check: dL/dA vs autograd ~2e-6)
+uv run zipf_qk_probe.py           # full probe: 48 batches x (trained + re-init GPT-2), ~35 s on MPS</code></pre>
+<p class="muted">
+    Artifacts: <code>zipf_qk_spectra.png</code>, <code>zipf_qk_usage.png</code>,
+    <code>zipf_qk_results.json</code> (all spectra, null slopes, usage curves, per-layer second moments).
+    The probe design was adversarially reviewed before the final run; the review's null experiments are what
+    turned the raw-slope observation into the true-vs-null gap methodology reported here, and caught a
+    per-layer covariance bug in the usage metric.
+</p>
+</div>
+
+<footer>
+    Experiment 11jun26 · <code>zipf_qk_probe.py</code> · GPT-2 124M on WikiText-2, MPS float32 ·
+    responds to Kim, Nichani, Wu, Bietti &amp; Lee, <i>Sharp Capacity Scaling of Spectral Optimizers in Learning
+    Associative Memory</i> (arXiv:2603.26554) · related:
+    <a href="forgetting_report.html">Learning without Forgetting</a> (Muon as worst-case forgetting control).
+</footer>
+
+</div>
+</body>
+</html>
