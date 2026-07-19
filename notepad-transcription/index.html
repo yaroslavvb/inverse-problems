@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#171915">
+    <meta
+      name="description"
+      content="An interactive, word-by-word transcription of the handwritten notepad in Audrey Lo's October 23, 2025 photograph."
+    >
+    <link rel="canonical" href="https://yaroslavvb.github.io/inverse-problems/notepad-transcription/">
+    <meta property="og:title" content="The notepad, decoded">
+    <meta
+      property="og:description"
+      content="Hover or tap each handwritten word to inspect its best-fit transcription."
+    >
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://yaroslavvb.github.io/inverse-problems/notepad-transcription/">
+    <meta
+      property="og:image"
+      content="https://yaroslavvb.github.io/inverse-problems/notepad-transcription/assets/og.png"
+    >
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="The notepad, decoded">
+    <meta
+      name="twitter:description"
+      content="A word-by-word interactive transcription of a tiny handwritten note."
+    >
+    <meta
+      name="twitter:image"
+      content="https://yaroslavvb.github.io/inverse-problems/notepad-transcription/assets/og.png"
+    >
+    <title>The notepad, decoded</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to the transcription</a>
+
+    <header class="site-header">
+      <a class="brand" href="../" aria-label="Inverse Problems home">
+        <span class="brand-mark" aria-hidden="true">IP</span>
+        <span>Inverse Problems</span>
+      </a>
+      <div class="header-meta">
+        <span class="live-dot" aria-hidden="true"></span>
+        Interactive reading
+      </div>
+    </header>
+
+    <main id="main-content">
+      <section class="intro" aria-labelledby="page-title">
+        <p class="eyebrow">Field note · San Francisco · 23 Oct 2025</p>
+        <h1 id="page-title">The notepad,<br><em>decoded.</em></h1>
+        <div class="intro-copy">
+          <p>
+            The handwriting in the source photo is only a few pixels tall. This viewer maps the
+            strongest word-level reading back onto the page—without pretending the blur is certainty.
+          </p>
+          <div class="instructions" role="group" aria-label="How to use this page">
+            <span><kbd>Hover</kbd> to inspect</span>
+            <span><kbd>Tap</kbd> to pin</span>
+            <span><kbd>Tab</kbd> for keyboard</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="workspace" aria-label="Interactive photograph and transcription">
+        <article class="viewer-card" aria-labelledby="viewer-title">
+          <div class="card-toolbar">
+            <div>
+              <p class="micro-label">Interactive crop</p>
+              <h2 id="viewer-title">Handwritten source</h2>
+            </div>
+            <div class="toolbar-actions">
+              <button class="text-button" id="revealButton" type="button" aria-pressed="false">
+                Reveal all zones
+              </button>
+              <button class="icon-button" id="sourceButton" type="button" aria-label="View the full source photograph">
+                <span aria-hidden="true">↗</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="note-frame" id="noteFrame">
+            <svg
+              id="noteSvg"
+              viewBox="760 1420 190 112"
+              role="img"
+              aria-labelledby="noteTitle noteDescription"
+              preserveAspectRatio="xMidYMid slice"
+            >
+              <title id="noteTitle">Close crop of handwritten notes held in two hands</title>
+              <desc id="noteDescription">
+                Hoverable regions align each handwritten word with a proposed transcription.
+              </desc>
+              <image href="assets/notepad.jpeg" x="0" y="0" width="1536" height="2048" />
+              <g id="wordZones" aria-label="Mapped handwritten words"></g>
+            </svg>
+
+            <div class="hover-card" id="hoverCard" hidden>
+              <span id="hoverLine">Line 01</span>
+              <strong id="hoverWord">word</strong>
+              <small id="hoverConfidence">High confidence</small>
+            </div>
+
+            <div class="image-caption" aria-hidden="true">
+              <span>01</span>
+              <span>Original pixels · 8× display</span>
+            </div>
+          </div>
+
+          <div class="viewer-footer">
+            <p>
+              <span class="mapped-count" id="mappedCount">31</span>
+              mapped words
+            </p>
+            <p class="active-readout" id="activeReadout" aria-live="polite">Hover a word to begin</p>
+          </div>
+        </article>
+
+        <aside class="transcript-card" aria-labelledby="transcript-title">
+          <div class="transcript-header">
+            <div>
+              <p class="micro-label">Best-fit reading</p>
+              <h2 id="transcript-title">Transcription</h2>
+            </div>
+            <span class="confidence-pill">Pixel matched</span>
+          </div>
+
+          <div class="transcript" id="transcript" role="group" aria-label="Interactive transcript">
+            <div class="transcript-line" data-line="1">
+              <span class="line-number">01</span>
+              <p></p>
+            </div>
+            <div class="transcript-line" data-line="2">
+              <span class="line-number">02</span>
+              <p></p>
+            </div>
+            <div class="transcript-line" data-line="3">
+              <span class="line-number">03</span>
+              <p></p>
+            </div>
+            <div class="transcript-break" aria-hidden="true"><span></span></div>
+            <div class="transcript-line" data-line="4">
+              <span class="line-number">04</span>
+              <p></p>
+            </div>
+            <div class="transcript-line" data-line="5">
+              <span class="line-number">05</span>
+              <p></p>
+            </div>
+          </div>
+
+          <div class="reading-note">
+            <span class="note-symbol" aria-hidden="true">≈</span>
+            <p>
+              Dotted words sit nearest the hand or in the softest blur. They are the best visual fit,
+              but remain slightly uncertain.
+            </p>
+          </div>
+
+          <details class="method-note">
+            <summary>How this was read</summary>
+            <p>
+              The original X image was checked at full resolution, then cropped, deskewed, isolated by
+              color channel, and compared word by word. Enhancement clarified spacing—not missing pixels.
+            </p>
+          </details>
+        </aside>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p>Transcription is interpretive, not forensic.</p>
+      <p>Photograph © its original author.</p>
+    </footer>
+
+    <dialog class="source-dialog" id="sourceDialog" aria-labelledby="source-title">
+      <div class="dialog-header">
+        <div>
+          <p class="micro-label">Source context</p>
+          <h2 id="source-title">The full photograph</h2>
+        </div>
+        <button class="dialog-close" id="closeDialog" type="button" aria-label="Close full photograph">×</button>
+      </div>
+      <figure>
+        <img src="assets/notepad.jpeg" alt="A person writing in a small notepad beside San Francisco Bay">
+        <figcaption>The interactive area is the notepad near the lower center of the photograph.</figcaption>
+      </figure>
+    </dialog>
+
+    <noscript>
+      <div class="noscript-note">
+        JavaScript is required for the hover mapping. The reading is: “if I can model user engagement as
+        more like a person actually in your life than a few texts — build the flow for every call/msg —
+        500 users at $60 a yr.”
+      </div>
+    </noscript>
+  </body>
+</html>
