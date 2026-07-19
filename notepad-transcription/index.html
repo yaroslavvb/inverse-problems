@@ -31,8 +31,8 @@
       content="https://yaroslavvb.github.io/inverse-problems/notepad-transcription/assets/og.png"
     >
     <title>The notepad, decoded</title>
-    <link rel="stylesheet" href="styles.css">
-    <script src="app.js" defer></script>
+    <link rel="stylesheet" href="styles.css?v=turn-reading">
+    <script src="app.js?v=turn-reading" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#main-content">Skip to the transcription</a>
@@ -112,7 +112,7 @@
 
           <div class="viewer-footer">
             <p>
-              <span class="mapped-count" id="mappedCount">33</span>
+              <span class="mapped-count" id="mappedCount">37</span>
               mapped fragments
             </p>
             <p class="active-readout" id="activeReadout" aria-live="polite">Hover a fragment to begin</p>
@@ -125,7 +125,7 @@
               <p class="micro-label">Best-fit reading</p>
               <h2 id="transcript-title">Transcription</h2>
             </div>
-            <span class="confidence-pill">Pixel matched</span>
+            <span class="confidence-pill">Context checked</span>
           </div>
 
           <div class="transcript" id="transcript" role="group" aria-label="Interactive transcript">
@@ -163,8 +163,8 @@
           <details class="method-note">
             <summary>How this was read</summary>
             <p>
-              The original X image was checked at full resolution, then cropped, deskewed, isolated by
-              color channel, and compared word by word. Enhancement clarified spacing—not missing pixels.
+              The source pixels were deskewed and compared across color channels. Word gaps were then
+              checked against the turn/RNG context; no missing pixels were invented.
             </p>
           </details>
         </aside>
@@ -192,9 +192,9 @@
 
     <noscript>
       <div class="noscript-note">
-        JavaScript is required for the hover mapping. The reading is: “— if I can model user engagement as
-        more like a person actually in your life than a few texts — build the flow for every call/msg —
-        500 users at $60 a yr.”
+        JavaScript is required for the hover mapping. The reading is: “— if some variable gets triggered
+        and it / not like a person decides to turn / left / right it goes straight — need an RNG for
+        turning left / right — 50 50 chance of left or right.”
       </div>
     </noscript>
   </body>
