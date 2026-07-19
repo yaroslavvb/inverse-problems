@@ -318,15 +318,14 @@ h2 {
   stroke: rgba(230, 255, 89, 0);
   stroke-width: 0.7;
   vector-effect: non-scaling-stroke;
+  pointer-events: none;
   transition: fill 120ms ease, stroke 120ms ease;
 }
 
 .word-hit {
   fill: transparent;
-  stroke: transparent;
-  stroke-width: 1.2px;
-  stroke-linejoin: round;
-  pointer-events: all;
+  stroke: none;
+  pointer-events: fill;
 }
 
 .word-group:hover .word-highlight,
@@ -490,12 +489,6 @@ h2 {
   font-family: Georgia, "Times New Roman", serif;
   font-size: clamp(1.28rem, 2.2vw, 1.82rem);
   line-height: 1.34;
-}
-
-.transcript-line[data-line="1"] p::before,
-.transcript-line[data-line="4"] p::before {
-  content: "— ";
-  color: var(--amber-deep);
 }
 
 .transcript-word {

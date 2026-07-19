@@ -3,13 +3,14 @@ const SVG_NS = "http://www.w3.org/2000/svg";
 // Four-corner regions are calibrated in the original 1536 x 2048 image space.
 // Keeping the exact quadrilateral for each fragment avoids perspective drift.
 const words = [
-  { id: "l1-if", line: 1, text: "if", points: [[798.3, 1444.5], [805, 1444.9], [805, 1454.7], [798.3, 1454.3]], confidence: "high" },
-  { id: "l1-i", line: 1, text: "I", points: [[806.3, 1445], [808.7, 1445.2], [808.7, 1454.5], [806.3, 1454.2]], confidence: "high" },
-  { id: "l1-can", line: 1, text: "can", points: [[809.3, 1446], [819.3, 1446.6], [819.3, 1454.2], [809.3, 1453.7]], confidence: "high" },
+  { id: "l1-dash", line: 1, text: "—", ariaLabel: "dash", points: [[790.6, 1445.9], [797.2, 1446.3], [797.2, 1450.4], [790.6, 1450]], confidence: "high" },
+  { id: "l1-if", line: 1, text: "if", points: [[798.8, 1442.9], [805.8, 1443.3], [805.8, 1453.4], [798.8, 1453]], confidence: "high" },
+  { id: "l1-i", line: 1, text: "I", points: [[807.2, 1442.9], [812.1, 1443.2], [812.1, 1453.3], [807.2, 1453]], confidence: "high" },
+  { id: "l1-can", line: 1, text: "can", points: [[812.7, 1446], [823.5, 1446.7], [823.5, 1454.5], [812.7, 1453.8]], confidence: "high" },
   { id: "l1-model", line: 1, text: "model", points: [[825, 1447.1], [843.8, 1448.2], [843.8, 1456.3], [825, 1455.2]], confidence: "high" },
-  { id: "l1-user", line: 1, text: "user", points: [[848, 1448.5], [860, 1449.2], [860, 1457.8], [848, 1457]], confidence: "high" },
-  { id: "l1-engagement", line: 1, text: "engagement", points: [[863.5, 1449.6], [889.5, 1451.2], [889.5, 1460], [863.5, 1458]], confidence: "high" },
-  { id: "l1-as", line: 1, text: "as", points: [[897, 1451.4], [906, 1452], [906, 1460.2], [897, 1459.4]], confidence: "medium" },
+  { id: "l1-user", line: 1, text: "user", points: [[848, 1450.1], [860, 1450.8], [860, 1458.1], [848, 1457.4]], confidence: "high" },
+  { id: "l1-engagement", line: 1, text: "engagement", points: [[863.2, 1451.5], [890, 1453.1], [890, 1460.5], [863.2, 1458.9]], confidence: "high" },
+  { id: "l1-as", line: 1, text: "as", points: [[897, 1452.5], [908, 1453.2], [908, 1460.8], [897, 1460.1]], confidence: "medium" },
 
   { id: "l2-more", line: 2, text: "more", points: [[797.5, 1453.8], [813.5, 1454.7], [813.5, 1461.2], [797.5, 1460.2]], confidence: "high" },
   { id: "l2-like", line: 2, text: "like", points: [[816, 1454.6], [823.3, 1455], [823.3, 1462], [816, 1461.6]], confidence: "high" },
@@ -25,8 +26,9 @@ const words = [
   { id: "l3-few", line: 3, text: "few", points: [[835.2, 1463.8], [847.2, 1464.5], [847.2, 1472.3], [835.2, 1471.6]], confidence: "high" },
   { id: "l3-texts", line: 3, text: "texts", points: [[851.5, 1466], [870.2, 1467.2], [870.2, 1474.2], [851.5, 1473]], confidence: "medium" },
 
-  { id: "l4-build", line: 4, text: "build", points: [[796.3, 1473.2], [811.5, 1474.1], [811.5, 1481.7], [796.3, 1480.8]], confidence: "high" },
-  { id: "l4-the", line: 4, text: "the", points: [[815, 1475], [822.2, 1475.4], [822.2, 1482.4], [815, 1482]], confidence: "high" },
+  { id: "l4-dash", line: 4, text: "—", ariaLabel: "dash", points: [[783.5, 1473.5], [788.2, 1473.8], [788.2, 1476.8], [783.5, 1476.5]], confidence: "high" },
+  { id: "l4-build", line: 4, text: "build", points: [[792, 1473], [807, 1473.9], [807, 1481.5], [792, 1480.6]], confidence: "high" },
+  { id: "l4-the", line: 4, text: "the", points: [[812.5, 1474.5], [823.5, 1475.1], [823.5, 1482.8], [812.5, 1482.2]], confidence: "high" },
   { id: "l4-flow", line: 4, text: "flow", points: [[824.2, 1475], [834.7, 1475.7], [834.7, 1483.7], [824.2, 1483]], confidence: "high" },
   { id: "l4-for", line: 4, text: "for", points: [[840, 1477.2], [847, 1477.6], [847, 1484.6], [840, 1484.2]], confidence: "high" },
   { id: "l4-every", line: 4, text: "every", points: [[851.7, 1478.8], [871.2, 1480], [871.2, 1488.4], [851.7, 1487.2]], confidence: "high" },
@@ -72,11 +74,12 @@ function makeSvgElement(name, attributes = {}) {
 
 function renderZones() {
   words.forEach((word) => {
+    const spokenLabel = word.ariaLabel ?? word.text;
     const group = makeSvgElement("g", {
       class: "word-group",
       tabindex: "0",
       role: "button",
-      "aria-label": `${word.text}, line ${word.line}, ${word.confidence} confidence`,
+      "aria-label": `${spokenLabel}, line ${word.line}, ${word.confidence} confidence`,
       "data-word-id": word.id,
     });
     const title = makeSvgElement("title");
@@ -115,6 +118,7 @@ function renderZones() {
 
 function renderTranscript() {
   words.forEach((word) => {
+    const spokenLabel = word.ariaLabel ?? word.text;
     const line = transcript.querySelector(`[data-line="${word.line}"] p`);
     const button = document.createElement("button");
     button.type = "button";
@@ -124,7 +128,7 @@ function renderTranscript() {
     button.textContent = word.text;
     button.setAttribute(
       "aria-label",
-      `${word.text}, line ${word.line}, ${word.confidence} confidence; highlight on photograph`,
+      `${spokenLabel}, line ${word.line}, ${word.confidence} confidence; highlight on photograph`,
     );
     line.append(button, document.createTextNode(" "));
     transcriptElements.set(word.id, button);
